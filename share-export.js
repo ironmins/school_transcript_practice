@@ -50,7 +50,7 @@
       const CSS_URL_ABS    = 'https://ironmins.github.io/school_transcript_analysis/style.css'; // 배포/미리보기 모두 안전
       const CSS_URL_REL    = '../style.css'; // /reports/에 저장한 뒤에도 동작하도록 추가
 
-      // 4) 공유용 HTML 조립
+      // 4) 공유용 HTML 조립 (+ SHARE_MODE 플래그 설정, init 이벤트리스너 무력화)
       const preloaded = JSON.stringify(this.combinedData);
       const html = `<!DOCTYPE html>
 <html lang="ko">
@@ -84,17 +84,26 @@
   <!-- 1차: 정적 스냅샷을 즉시 표시(데이터 보장) -->
   ${snapshotHTML}
 
+  <!-- 공유 모드 플래그 -->
+  <script>window.__SHARE_MODE__ = true; window.PRELOADED_DATA = ${preloaded};</script>
+
   <!-- 2차: 데이터 주입 + 현재 script.js 인라인 삽입 후 원본처럼 재렌더 -->
-  <script>window.PRELOADED_DATA = ${preloaded};</script>
   ${currentScriptText ? `<script>\n${currentScriptText.replace(/<\/script>/g,'<\\/script>')}\n<\/script>` : ''}
 
-  <!-- 3차: 강제 초기화(DOM 상태와 무관하게) + 탭 보정 + PDF/인쇄 -->
+  <!-- 3차: 강제 초기화(DOM 상태와 무관하게) + 탭 보정 + PDF/인쇄 + 이벤트리스너 no-op -->
   <script>
     (function start(){
       function boot(){
         try{
+          // 공유 모드에서는 업로드/드래그 등 초기 이벤트리스너가 필요 없음 → 안전하게 무력화
+          if (window.__SHARE_MODE__ && window.ScoreAnalyzer) {
+            const orig = ScoreAnalyzer.prototype.initializeEventListeners;
+            ScoreAnalyzer.prototype.initializeEventListeners = function(){ /* no-op in share view */ };
+          }
+          // 업로드 UI 숨기고 결과 표시
           const up = document.querySelector('.upload-section'); if (up) up.style.display = 'none';
           const rs = document.getElementById('results'); if (rs) rs.style.display = 'block';
+
           if (window.ScoreAnalyzer) {
             window.scoreAnalyzer = new ScoreAnalyzer();
             // 숨은 탭 차트 크기 보정(왕복 클릭)
@@ -104,7 +113,7 @@
               setTimeout(() => clickTab('subjects'), 60);
             }, 120);
           }
-        }catch(e){}
+        }catch(e){ console.error(e); }
       }
       if (window.ScoreAnalyzer) boot();
       else window.addEventListener('load', boot, {once:true});
