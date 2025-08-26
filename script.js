@@ -1,3 +1,4 @@
+window.$ = (id) => document.getElementById(id);
 class ScoreAnalyzer {
     constructor() {
         this.filesData = new Map(); // 파일명 -> 분석 데이터 매핑
@@ -15,7 +16,8 @@ class ScoreAnalyzer {
                 if (results) results.style.display = 'block';
                 this.displayResults();
                 const exportBtn = document.getElementById('exportBtn');
-                if (exportBtn) exportBtn.disabled = false;
+                if (exportBtn) exportBtn.disabled = false; const __pb2 = document.getElementById('publishBtn'); if (__pb2) __pb2.disabled = false;
+            const __pb = document.getElementById('publishBtn'); if (__pb) __pb.disabled = false;
             } catch (e) {
                 console.error('PRELOADED_DATA 처리 중 오류:', e);
             }
@@ -190,7 +192,8 @@ class ScoreAnalyzer {
 
             // Enable export button after successful analysis
             const exportBtn = document.getElementById('exportBtn');
-            if (exportBtn) exportBtn.disabled = false;
+            if (exportBtn) exportBtn.disabled = false; const __pb2 = document.getElementById('publishBtn'); if (__pb2) __pb2.disabled = false;
+            const __pb = document.getElementById('publishBtn'); if (__pb) __pb.disabled = false;
         } catch (error) {
             this.hideLoading();
             this.showError('파일 분석 중 오류가 발생했습니다: ' + error.message);
