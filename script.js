@@ -680,14 +680,14 @@ class ScoreAnalyzer {
     }
 
     // 2) 원본과 동일 리소스 경로(필요 시 레포 경로 맞추기)
-    const CSS_URL     = 'https://ironmins.github.io/school_transcript_analysis/style.css';
+    const CSS_URL     = 'https://ironmins.github.io/school_transcript_practice/style.css';
     const XLSX_URL    = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
     const CHART_URL   = 'https://cdn.jsdelivr.net/npm/chart.js';
     const DATALABELS_URL = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2';
     const JSZIP_URL   = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
     const JSPDF_URL   = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
     const H2C_URL     = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-    const SCRIPT_URL  = 'https://ironmins.github.io/school_transcript_analysis/script.js';
+    const SCRIPT_URL  = 'https://ironmins.github.io/school_transcript_practice/script.js';
 
     // 3) 공유용 HTML: PRELOADED_DATA를 주입하고 원본 script.js가 그대로 실행되게 구성
     const preloaded = JSON.stringify(this.combinedData);
