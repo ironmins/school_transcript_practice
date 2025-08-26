@@ -1,10 +1,3 @@
-
-function getParamFromHash(key){
-  const hash=window.location.hash||'';
-  const m=hash.match(new RegExp(key+'=([^&]+)'));
-  return m?decodeURIComponent(m[1]):null;
-}
-
 class ScoreAnalyzer {
     constructor() {
         this.filesData = new Map(); // 파일명 -> 분석 데이터 매핑
@@ -13,23 +6,25 @@ class ScoreAnalyzer {
         this.initializeEventListeners();
 
         
-        // 해시 기반 공유 복원: #data(압축 JSON) 또는 #src(외부 JSON)
-        (async () => {
-            try {
-                const src = getParamFromHash('src');
-                if (src) {
-                    const resp = await fetch(src, {cache:'no-cache'});
-                    const json = await resp.json();
-                    window.PRELOADED_DATA = json;
-                } else {
-                    const dataPacked = getParamFromHash('data');
-                    if (dataPacked && window.LZString) {
-                        const decoded = window.LZString.decompressFromEncodedURIComponent(dataPacked);
-                        if (decoded) window.PRELOADED_DATA = JSON.parse(decoded);
-                    }
+        // 해시(#data=...)에 공유 데이터가 있으면 복원
+        try {
+            const hash = window.location.hash || '';
+            const m = hash.match(/data=([^&]+)/);
+            if (m) {
+                let decoded = null;
+                if (window.LZString && typeof window.LZString.decompressFromEncodedURIComponent === 'function') {
+                    decoded = window.LZString.decompressFromEncodedURIComponent(m[1]);
                 }
-            } catch(e){ console.warn('공유 데이터 복원 실패', e); }
-        })();
+                if (!decoded) {
+                    decoded = decodeURIComponent(m[1]);
+                }
+                if (decoded) {
+                    window.PRELOADED_DATA = JSON.parse(decoded);
+                }
+            }
+        } catch (e) {
+            console.warn('해시 데이터 복원 실패:', e);
+        }
 // If the page provides preloaded analysis data, render directly
         if (window.PRELOADED_DATA) {
             try {
@@ -39,12 +34,10 @@ class ScoreAnalyzer {
                 const results = document.getElementById('results');
                 if (results) results.style.display = 'block';
                 this.displayResults();
-                const exportBtn = document.getElementById('exportBtn');
-                $0
-            const shareBtn2=document.getElementById('shareLinkBtn'); if(shareBtn2) shareBtn2.disabled=false;
-            const exportJsonBtn2=document.getElementById('exportJsonBtn'); if(exportJsonBtn2) exportJsonBtn2.disabled=false;
-                const shareBtn = document.getElementById('shareLinkBtn'); if(shareBtn) shareBtn.disabled=false;
-                const exportJsonBtn = document.getElementById('exportJsonBtn'); if(exportJsonBtn) exportJsonBtn.disabled=false;
+                
+      var shareBtn = document.getElementById("shareLinkBtn"); if (shareBtn) shareBtn.disabled = false;
+const exportBtn = document.getElementById('exportBtn');
+                if (exportBtn) exportBtn.disabled = false;
             } catch (e) {
                 console.error('PRELOADED_DATA 처리 중 오류:', e);
             }
@@ -69,8 +62,12 @@ class ScoreAnalyzer {
         const fileLabel = document.querySelector('.file-input-label');
 
         
+        // 링크 공유 버튼 리스너
         const shareLinkBtn = document.getElementById('shareLinkBtn');
-        const exportJsonBtn = document.getElementById('exportJsonBtn');fileInput.addEventListener('change', (e) => {
+        if (shareLinkBtn) {
+            shareLinkBtn.addEventListener('click', (ev) => { ev.preventDefault(); this.openShareLink(); }, { passive: true });
+        }
+fileInput.addEventListener('change', (e) => {
             const files = Array.from(e.target.files);
             if (files.length > 0) {
                 this.selectedFiles = files;
@@ -217,7 +214,9 @@ class ScoreAnalyzer {
             
             this.combineAllData();
             this.displayResults();
-            this.hideLoading();
+            
+      var shareBtn2 = document.getElementById("shareLinkBtn"); if (shareBtn2) shareBtn2.disabled = false;
+this.hideLoading();
 
             // Enable export button after successful analysis
             const exportBtn = document.getElementById('exportBtn');
@@ -2886,28 +2885,57 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// 분석 결과 JSON 저장
-ScoreAnalyzer.prototype.exportAnalysisJson = function(){
-    const data = this.combinedData || window.PRELOADED_DATA;
-    if(!data){ this.showError('먼저 분석을 완료하세요.'); return; }
-    const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
-    const a = document.createElement('a');
-    const stamp = new Date().toISOString().replace(/[-:T]/g,'').slice(0,12);
-    a.href = URL.createObjectURL(blob);
-    a.download = 'analysis_'+stamp+'.json';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 0);
-};
+// === 링크 공유 (해시 기반) ===
 
-// 링크로 공유(긴 해시 방식, 클릭 즉시 새창 오픈)
-ScoreAnalyzer.prototype.openShareLink = function(){
-    const data = this.combinedData || window.PRELOADED_DATA;
-    if(!data){ this.showError('먼저 분석을 완료하세요.'); return; }
+ScoreAnalyzer.prototype.openShareLink = function() {
+  try {
+    const data = (this && this.combinedData) ? this.combinedData : (window.PRELOADED_DATA || null);
+    if (!data) {
+      alert('먼저 분석을 완료하세요.');
+      return;
+    }
     const json = JSON.stringify(data);
-    const packed = (window.LZString)? window.LZString.compressToEncodedURIComponent(json) : encodeURIComponent(json);
+    const packed = (window.LZString)
+      ? window.LZString.compressToEncodedURIComponent(json)
+      : encodeURIComponent(json);
     const base = window.location.origin + window.location.pathname;
     const url = base + '#data=' + packed;
-    const w = window.open('about:blank','_blank','noopener'); // 동기 오픈
-    if(w && !w.closed){ w.location.replace(url); } else { window.location.href = url; }
+
+    if (url.length > 180000) {
+      alert('데이터가 커서 링크가 매우 깁니다. 메신저에서 잘릴 수 있어 ZIP 배포를 권합니다.');
+    }
+
+    let win = null;
+    try {
+      win = window.open('', '_blank', 'noopener');
+      if (win && !win.closed) {
+        win.location.href = url;
+        return;
+      }
+    } catch (_) {}
+
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (_) {}
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url);
+        alert('팝업이 차단된 것 같습니다. 링크를 클립보드에 복사했습니다. 새 탭에 붙여넣어 열어주세요.');
+        return;
+      }
+    } catch (_) {}
+
+    window.location.href = url;
+  } catch (e) {
+    console.error(e);
+    alert('링크 생성 중 문제가 발생했습니다.');
+  }
 };
+
