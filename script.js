@@ -20,66 +20,7 @@ class ScoreAnalyzer {
                 console.error('PRELOADED_DATA 처리 중 오류:', e);
             }
         }
-    }
-    async exportAsHtml() {
-      try {
-        if (!this.combinedData) {
-          alert('먼저 파일을 분석해 주세요.');
-          return;
-        }
-
-        // 원본 index.html의 결과 영역을 그대로 재사용
-        const resultsHtml = document.getElementById('results')?.outerHTML || '';
-
-        // 간단한 공유용 HTML(동일한 head 의존성 유지)
-        const html = `
-    <!DOCTYPE html>
-    <html lang="ko">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>분석 결과(보기 전용)</title>
-      <link rel="stylesheet" href="style.css">
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-      <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-      <style>
-        /* 보기 전용에서 업로드 섹션 숨김 */
-        .upload-section { display:none !important; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <header>
-          <h1>(보기 전용) 내신 분석 결과</h1>
-        </header>
     
-        <!-- 업로드 영역 없이 결과만 출력 -->
-        ${resultsHtml}
-      </div>
-    
-      <script>
-        window.PRELOADED_DATA = ${JSON.stringify(this.combinedData)};
-      </script>
-      <script src="script.js"></script>
-    </body>
-    </html>`;
-    
-        // 새 창으로 미리보기(Blob URL)
-        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
-    
-      } catch (e) {
-        console.error(e);
-        alert('보기 전용 HTML 생성 중 오류가 발생했습니다.');
-      }
-    }
-}
-
     initializeEventListeners() {
         const fileInput = document.getElementById('excelFiles');
         const analyzeBtn = document.getElementById('analyzeBtn');
