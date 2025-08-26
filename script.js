@@ -664,8 +664,7 @@ class ScoreAnalyzer {
     }
 
     // Export a complete deployment package with all files
-// ZIP 없이: 현재 #results 화면을 그대로 복제하여 '새 창'으로만 여는 버전
-async exportAsHtml() {
+    async exportAsHtml() {
   try {
     // 1) 결과 DOM 존재 확인
     const results = document.getElementById('results');
@@ -674,110 +673,127 @@ async exportAsHtml() {
       return;
     }
 
-    // 2) #results DOM 복제
-    const clone = results.cloneNode(true);
-    clone.style.display = ''; // 공유 페이지에서는 항상 보이도록
+    // 원본처럼 동작하는 공유 페이지: PRELOADED_DATA를 주입하고 원본 스크립트를 로드
+    if (!this.combinedData) {
+      alert('먼저 "분석 시작"으로 분석을 완료해 주세요.');
+      return;
+    }
 
-    // 3) 차트(canvas) → 이미지로 고정 (공유 페이지에서 Chart.js 없이 동일 표시)
-    const origCanvases = results.querySelectorAll('canvas');
-    const cloneCanvases = clone.querySelectorAll('canvas');
-    cloneCanvases.forEach((c, i) => {
-      const src = origCanvases[i];
-      if (!src) return;
-      try {
-        const url = src.toDataURL('image/png');
-        const img = new Image();
-        img.src = url;
-        c.replaceWith(img);
-      } catch (e) {
-        const note = document.createElement('div');
-        note.textContent = '※ 브라우저 정책으로 차트 이미지를 고정하지 못했습니다.';
-        note.style.fontSize = '12px';
-        note.style.color = '#888';
-        c.parentNode.insertBefore(note, c.nextSibling);
-      }
-    });
+    // 2) 원본과 동일 리소스 경로(필요 시 레포 경로 맞추기)
+    const CSS_URL     = 'https://ironmins.github.io/school_transcript_analysis/style.css';
+    const XLSX_URL    = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    const CHART_URL   = 'https://cdn.jsdelivr.net/npm/chart.js';
+    const DATALABELS_URL = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2';
+    const JSZIP_URL   = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+    const JSPDF_URL   = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    const H2C_URL     = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    const SCRIPT_URL  = 'https://ironmins.github.io/school_transcript_analysis/script.js';
 
-    // 4) 공유용 HTML 조립
-    //    - CSS는 절대경로로 걸면 /reports/로 옮겨도 모양이 유지됩니다.
-    //      필요 시 아래 URL을 본인 레포 주소로 맞추세요.
-    const CSS_URL = 'https://ironmins.github.io/school_transcript_analysis/style.css';
-    const resultsHTML = clone.outerHTML;
+    // 3) 공유용 HTML: PRELOADED_DATA를 주입하고 원본 script.js가 그대로 실행되게 구성
+    const preloaded = JSON.stringify(this.combinedData);
     const html = `<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>(공유) 고1 내신 분석 결과</title>
-  <link rel="stylesheet" href="${CSS_URL}?v=share">
-  <!-- PDF/인쇄용 라이브러리 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link rel="stylesheet" href="${CSS_URL}">
+  <script src="${XLSX_URL}"></script>
+  <script src="${CHART_URL}"></script>
+  <script src="${DATALABELS_URL}"></script>
+  <script src="${JSZIP_URL}"></script>
+  <script src="${JSPDF_URL}"></script>
+  <script src="${H2C_URL}"></script>
   <style>
-    body{max-width:1200px;margin:24px auto;padding:0 12px}
-    .upload-section,#loading,#error{display:none !important}
-    .share-toolbar{display:flex; gap:8px; justify-content:flex-end; margin:8px 0 12px}
-    .share-toolbar button{padding:8px 12px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; cursor:pointer}
-    .share-toolbar button:hover{background:#f3f4f6}
+    .upload-section, #loading, #error { display: none !important; }
+    body { max-width: 1200px; margin: 24px auto; padding: 0 12px; }
   </style>
 </head>
 <body>
-  <!-- 상단 툴바: 인쇄/PDF -->
-  <div class="share-toolbar">
-    <button id="btnPrint">인쇄</button>
-    <button id="btnPdf">PDF 저장</button>
+  <div class="container">
+    <header>
+      <h1>(공유) 고등학교 1학년 내신 분석 결과</h1>
+      <p style="color:#6b7280;font-size:12px;margin-top:4px">이 페이지는 업로드 없이 보기 전용으로 작동합니다.</p>
+    </header>
+
+    <div class="upload-section"></div>
+
+    <div id="results" class="results-section" style="display:block">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="subjects">과목별 분석</button>
+        <button class="tab-btn" data-tab="grade-analysis">평균등급 분포</button>
+        <button class="tab-btn" data-tab="students">학생별 분석</button>
+      </div>
+
+      <div id="subjects-tab" class="tab-content active">
+        <h2>과목별 분석</h2>
+        <div id="subjectAverages" class="subject-averages"></div>
+      </div>
+
+      <div id="grade-analysis-tab" class="tab-content">
+        <h2>평균등급 분포 분석</h2>
+        <div class="grade-analysis-container">
+          <div class="chart-section">
+            <h3>평균등급 분포</h3>
+            <canvas id="scatterChart" width="400" height="300"></canvas>
+          </div>
+          <div class="chart-section">
+            <h3>등급구간별 학생 수 분포</h3>
+            <canvas id="barChart" width="400" height="300"></canvas>
+          </div>
+          <div class="stats-section">
+            <div class="stat-item"><span class="stat-label">전체 평균등급</span><span id="overallAverage" class="stat-value">-</span></div>
+            <div class="stat-item"><span class="stat-label">표준편차</span><span id="standardDeviation" class="stat-value">-</span></div>
+            <div class="stat-item"><span class="stat-label">최고등급</span><span id="bestGrade" class="stat-value">-</span></div>
+            <div class="stat-item"><span class="stat-label">최저등급</span><span id="worstGrade" class="stat-value">-</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="students-tab" class="tab-content">
+        <h2>학생별 분석</h2>
+        <div id="studentAnalysis" class="student-analysis">
+          <div class="student-selector">
+            <div class="selector-group"><label for="gradeSelect">학년:</label><select id="gradeSelect" class="selector"><option value="">전체</option></select></div>
+            <div class="selector-group"><label for="classSelect">반:</label><select id="classSelect" class="selector"><option value="">전체</option></select></div>
+            <div class="selector-group"><label for="studentSelect">번호:</label><select id="studentSelect" class="selector"><option value="">학생 선택</option></select></div>
+            <div class="selector-group"><label for="studentNameSearch">이름:</label><input id="studentNameSearch" class="selector" type="text" placeholder="이름으로 검색"/></div>
+            <button id="showStudentDetail" class="detail-btn" disabled>상세 분석</button>
+            <button id="pdfClassBtn" class="detail-btn" title="선택한 학급 전체 PDF 저장">학급 전체 PDF</button>
+          </div>
+          <div class="view-toggle">
+            <button id="tableViewBtn" class="toggle-btn active">전체 테이블</button>
+            <button id="detailViewBtn" class="toggle-btn">개인 상세</button>
+          </div>
+          <div id="tableView" class="table-view">
+            <div class="search-box"><input type="text" id="studentSearch" placeholder="학생 번호 또는 이름으로 검색..."></div>
+            <div id="studentTable" class="student-table"></div>
+          </div>
+          <div id="detailView" class="detail-view" style="display:none;">
+            <div id="studentDetailContent" class="student-detail-content"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="app-footer">
+      <div class="footer-right"><div class="credits">Shared Report</div></div>
+    </footer>
   </div>
 
-  ${resultsHTML}
+  <script>window.PRELOADED_DATA = ${preloaded};</script>
+  <script src="${SCRIPT_URL}"></script>
 
   <script>
-    // 탭 전환만 동작하도록 경량 스크립트
-    document.addEventListener('click', function(e){
-      const btn = e.target.closest('.tab-btn');
-      if(!btn) return;
-      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      const id = btn.dataset.tab; // subjects | grade-analysis | students
-      document.querySelectorAll('.tab-content').forEach(p=>p.classList.remove('active'));
-      const pane = document.getElementById(id + '-tab');
-      if(pane) pane.classList.add('active');
-    }, {capture:true});
-
-    // 인쇄
-    document.getElementById('btnPrint')?.addEventListener('click', ()=>{ window.print(); });
-
-    // PDF 저장 (#results 전체를 캡처)
-    document.getElementById('btnPdf')?.addEventListener('click', async ()=>{
-      const el = document.getElementById('results');
-      if(!el) return;
-      const { jsPDF } = window.jspdf;
-      const canvas = await html2canvas(el, {scale:2, useCORS:true});
-      const pdf = new jsPDF('p', 'pt', 'a4');
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const imgW = pageW - 40; // 좌우 여백
-      const ratio = imgW / canvas.width;
-      const chunkH = (pageH - 40) / ratio;
-      let srcY = 0;
-      while (srcY < canvas.height) {
-        const h = Math.min(chunkH, canvas.height - srcY);
-        const pageCanvas = document.createElement('canvas');
-        pageCanvas.width = canvas.width;
-        pageCanvas.height = h;
-        pageCanvas.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, h, 0, 0, canvas.width, h);
-        const pageImg = pageCanvas.toDataURL('image/png');
-        if (srcY > 0) pdf.addPage();
-        pdf.addImage(pageImg, 'PNG', 20, 20, imgW, h * ratio);
-        srcY += h;
-      }
-      const stamp = new Date().toISOString().replace(/[:.]/g,'-');
-      pdf.save('내신분석_공유_'+stamp+'.pdf');
+    window.addEventListener('load', () => {
+      const clickTab = (name) => document.querySelector('.tab-btn[data-tab="'+name+'"]')?.click();
+      setTimeout(() => { clickTab('grade-analysis'); setTimeout(() => { clickTab('subjects'); }, 50); }, 100);
     });
-  <\/script>
+  </script>
 </body>
 </html>`;
 
-    // 5) 새 창으로만 열기 (ZIP/다운로드 없이)
+    // 4) 새 창으로 열기
     const w = window.open('', '_blank');
     w.document.open(); w.document.write(html); w.document.close();
 
