@@ -1,3 +1,10 @@
+
+function getParamFromHash(key){
+  const hash=window.location.hash||'';
+  const m=hash.match(new RegExp(key+'=([^&]+)'));
+  return m?decodeURIComponent(m[1]):null;
+}
+
 class ScoreAnalyzer {
     constructor() {
         this.filesData = new Map(); // 파일명 -> 분석 데이터 매핑
@@ -6,19 +13,23 @@ class ScoreAnalyzer {
         this.initializeEventListeners();
 
         
-  // 🔹 외부 JSON 소스가 있으면 먼저 시도 (?src=... 또는 #src=...)
-  (async () => {
-    const srcUrl = getParamFromHashOrQuery('src');
-    if (srcUrl) {
-      try {
-        const resp = await fetch(srcUrl, { cache: 'no-cache' });
-        const json = await resp.json();
-        window.PRELOADED_DATA = json;
-      } catch (e) {
-        console.error('외부 JSON 로드 실패:', e);
-      }
-    }
-  })();
+        // 해시 기반 공유 복원: #data(압축 JSON) 또는 #src(외부 JSON)
+        (async () => {
+            try {
+                const src = getParamFromHash('src');
+                if (src) {
+                    const resp = await fetch(src, {cache:'no-cache'});
+                    const json = await resp.json();
+                    window.PRELOADED_DATA = json;
+                } else {
+                    const dataPacked = getParamFromHash('data');
+                    if (dataPacked && window.LZString) {
+                        const decoded = window.LZString.decompressFromEncodedURIComponent(dataPacked);
+                        if (decoded) window.PRELOADED_DATA = JSON.parse(decoded);
+                    }
+                }
+            } catch(e){ console.warn('공유 데이터 복원 실패', e); }
+        })();
 // If the page provides preloaded analysis data, render directly
         if (window.PRELOADED_DATA) {
             try {
@@ -28,14 +39,12 @@ class ScoreAnalyzer {
                 const results = document.getElementById('results');
                 if (results) results.style.display = 'block';
                 this.displayResults();
-                
-      
-      var shareBtn2 = document.getElementById("shareLinkBtn"); if (shareBtn2) shareBtn2.disabled = false;
-      var exportJsonBtn2 = document.getElementById("exportJsonBtn"); if (exportJsonBtn2) exportJsonBtn2.disabled = false;
-var shareBtn = document.getElementById("shareLinkBtn"); if (shareBtn) shareBtn.disabled = false;
-      var exportJsonBtn = document.getElementById("exportJsonBtn"); if (exportJsonBtn) exportJsonBtn.disabled = false;
-const exportBtn = document.getElementById('exportBtn');
-                if (exportBtn) exportBtn.disabled = false;
+                const exportBtn = document.getElementById('exportBtn');
+                $0
+            const shareBtn2=document.getElementById('shareLinkBtn'); if(shareBtn2) shareBtn2.disabled=false;
+            const exportJsonBtn2=document.getElementById('exportJsonBtn'); if(exportJsonBtn2) exportJsonBtn2.disabled=false;
+                const shareBtn = document.getElementById('shareLinkBtn'); if(shareBtn) shareBtn.disabled=false;
+                const exportJsonBtn = document.getElementById('exportJsonBtn'); if(exportJsonBtn) exportJsonBtn.disabled=false;
             } catch (e) {
                 console.error('PRELOADED_DATA 처리 중 오류:', e);
             }
@@ -59,25 +68,16 @@ const exportBtn = document.getElementById('exportBtn');
         const uploadSection = document.querySelector('.upload-section');
         const fileLabel = document.querySelector('.file-input-label');
 
-        fileInput.addEventListener('change', (e) => {
+        
+        const shareLinkBtn = document.getElementById('shareLinkBtn');
+        const exportJsonBtn = document.getElementById('exportJsonBtn');fileInput.addEventListener('change', (e) => {
             const files = Array.from(e.target.files);
             if (files.length > 0) {
                 this.selectedFiles = files;
                 this.displayFileList(files);
                 analyzeBtn.disabled = false;
                 this.hideError();
-            
-  try {
-    const shareLinkBtn = document.getElementById('shareLinkBtn');
-    if (shareLinkBtn) {
-      shareLinkBtn.addEventListener('click', (ev) => { ev.preventDefault(); this.openShareLink(); });
-    }
-    const exportJsonBtn = document.getElementById('exportJsonBtn');
-    if (exportJsonBtn) {
-      exportJsonBtn.addEventListener('click', (ev) => { ev.preventDefault(); this.exportAnalysisJson(); });
-    }
-  } catch(e) {}
-}
+            }
         });
 
         // Drag & drop 지원 (업로드 섹션 전체)
@@ -2886,60 +2886,28 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-function getParamFromHashOrQuery(key) {
-  try {
-    const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.has(key)) return searchParams.get(key);
-    const hash = window.location.hash || '';
-    const idx = hash.indexOf(key + '=');
-    if (idx >= 0) {
-      const fragment = hash.slice(idx + key.length + 1);
-      const end = fragment.indexOf('&');
-      const val = end >= 0 ? fragment.slice(0, end) : fragment;
-      return decodeURIComponent(val);
-    }
-  } catch (e) { console.warn(e); }
-  return null;
-}
-
-
-// === 분석 결과 JSON 내보내기 ===
-ScoreAnalyzer.prototype.exportAnalysisJson = function() {
-  if (!this.combinedData && !window.PRELOADED_DATA) {
-    alert('먼저 분석을 완료하세요.');
-    return;
-  }
-  const data = this.combinedData || window.PRELOADED_DATA;
-  const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
-  const a = document.createElement('a');
-  const stamp = new Date().toISOString().replace(/[-:T]/g,'').slice(0,12);
-  a.href = URL.createObjectURL(blob);
-  a.download = 'analysis_' + stamp + '.json';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 0);
+// 분석 결과 JSON 저장
+ScoreAnalyzer.prototype.exportAnalysisJson = function(){
+    const data = this.combinedData || window.PRELOADED_DATA;
+    if(!data){ this.showError('먼저 분석을 완료하세요.'); return; }
+    const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().replace(/[-:T]/g,'').slice(0,12);
+    a.href = URL.createObjectURL(blob);
+    a.download = 'analysis_'+stamp+'.json';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 0);
 };
 
-// === 짧은 링크 공유(권장): 외부 JSON 주소를 받아 viewer로 열기 ===
-ScoreAnalyzer.prototype.openShareLink = function() {
-  if (!this.combinedData && !window.PRELOADED_DATA) {
-    alert('먼저 분석을 완료하세요.');
-    return;
-  }
-  // 사용자에게 외부 JSON 주소를 입력받음 (예: https://ironmins.github.io/school_transcript_practice/data/analysis.json)
-  const hint = '외부 JSON 주소를 입력하세요 (예: https://ironmins.github.io/school_transcript_practice/data/analysis_2025.json)';
-  const input = window.prompt(hint, 'https://ironmins.github.io/school_transcript_practice/data/analysis_2025.json');
-  if (!input) return;
-
-  // 클릭 이벤트 내에서 바로 새창 오픈(팝업 차단 회피)
-  const w = window.open('about:blank', '_blank', 'noopener'); // 즉시 오픈
-  const base = window.location.origin + window.location.pathname;
-  // 동일 index.html을 viewer로 사용: #src=... 로 전달하면 constructor에서 fetch하여 렌더
-  const url = base + '#src=' + encodeURIComponent(input);
-  if (w && !w.closed) {
-    w.location.replace(url);
-  } else {
-    // 실패 시 현재 탭 이동
-    window.location.href = url;
-  }
+// 링크로 공유(긴 해시 방식, 클릭 즉시 새창 오픈)
+ScoreAnalyzer.prototype.openShareLink = function(){
+    const data = this.combinedData || window.PRELOADED_DATA;
+    if(!data){ this.showError('먼저 분석을 완료하세요.'); return; }
+    const json = JSON.stringify(data);
+    const packed = (window.LZString)? window.LZString.compressToEncodedURIComponent(json) : encodeURIComponent(json);
+    const base = window.location.origin + window.location.pathname;
+    const url = base + '#data=' + packed;
+    const w = window.open('about:blank','_blank','noopener'); // 동기 오픈
+    if(w && !w.closed){ w.location.replace(url); } else { window.location.href = url; }
 };
