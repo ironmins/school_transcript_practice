@@ -5,7 +5,27 @@ class ScoreAnalyzer {
         this.selectedFiles = null; // 사용자가 선택/드롭한 파일 목록
         this.initializeEventListeners();
 
-        // If the page provides preloaded analysis data, render directly
+        
+        // 해시(#data=...)에 공유 데이터가 있으면 복원
+        try {
+            const hash = window.location.hash || '';
+            const m = hash.match(/data=([^&]+)/);
+            if (m) {
+                let decoded = null;
+                if (window.LZString && typeof window.LZString.decompressFromEncodedURIComponent === 'function') {
+                    decoded = window.LZString.decompressFromEncodedURIComponent(m[1]);
+                }
+                if (!decoded) {
+                    decoded = decodeURIComponent(m[1]);
+                }
+                if (decoded) {
+                    window.PRELOADED_DATA = JSON.parse(decoded);
+                }
+            }
+        } catch (e) {
+            console.warn('해시 데이터 복원 실패:', e);
+        }
+// If the page provides preloaded analysis data, render directly
         if (window.PRELOADED_DATA) {
             try {
                 this.combinedData = window.PRELOADED_DATA;
@@ -41,7 +61,13 @@ const exportBtn = document.getElementById('exportBtn');
         const uploadSection = document.querySelector('.upload-section');
         const fileLabel = document.querySelector('.file-input-label');
 
-        fileInput.addEventListener('change', (e) => {
+        
+        // 링크 공유 버튼 리스너
+        const shareLinkBtn = document.getElementById('shareLinkBtn');
+        if (shareLinkBtn) {
+            shareLinkBtn.addEventListener('click', (ev) => { ev.preventDefault(); this.openShareLink(); }, { passive: true });
+        }
+fileInput.addEventListener('change', (e) => {
             const files = Array.from(e.target.files);
             if (files.length > 0) {
                 this.selectedFiles = files;
@@ -2861,7 +2887,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // === 링크 공유 (해시 기반) ===
 
-SchoolTranscriptApp.prototype.openShareLink = function() {
+ScoreAnalyzer.prototype.openShareLink = function() {
   try {
     const data = (this && this.combinedData) ? this.combinedData : (window.PRELOADED_DATA || null);
     if (!data) {
