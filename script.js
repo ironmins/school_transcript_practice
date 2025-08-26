@@ -4,6 +4,20 @@ class ScoreAnalyzer {
         this.combinedData = null; // 통합된 분석 데이터
         this.selectedFiles = null; // 사용자가 선택/드롭한 파일 목록
         this.initializeEventListeners();
+        // 🔹 URL 해시에 공유 데이터가 있으면 복원
+        const hash = window.location.hash || '';
+        const m = hash.match(/data=([^&]+)/);
+        if (m && window.LZString) {
+            try {
+                const decoded = window.LZString.decompressFromEncodedURIComponent(m[1]);
+                if (decoded) {
+                    window.PRELOADED_DATA = JSON.parse(decoded);
+                }
+            } catch (e) {
+                console.warn('해시 데이터 복원 실패:', e);
+            }
+        }
+
 
         // If the page provides preloaded analysis data, render directly
         if (window.PRELOADED_DATA) {
@@ -14,6 +28,13 @@ class ScoreAnalyzer {
                 const results = document.getElementById('results');
                 if (results) results.style.display = 'block';
                 this.displayResults();
+            // 내보내기 버튼 활성화
+            const shareLinkBtn = document.getElementById('shareLinkBtn');
+            const exportSingleBtn = document.getElementById('exportSingleBtn');
+            const exportZipBtn = document.getElementById('exportZipBtn');
+            if (shareLinkBtn) shareLinkBtn.disabled = false;
+            if (exportSingleBtn) exportSingleBtn.disabled = false;
+            if (exportZipBtn) exportZipBtn.disabled = false;
                 const exportBtn = document.getElementById('exportBtn');
                 if (exportBtn) exportBtn.disabled = false;
             } catch (e) {
@@ -23,6 +44,9 @@ class ScoreAnalyzer {
     }
 
     initializeEventListeners() {
+  const shareLinkBtn = document.getElementById('shareLinkBtn');
+  const exportSingleBtn = document.getElementById('exportSingleBtn');
+  const exportZipBtn = document.getElementById('exportZipBtn');
         const fileInput = document.getElementById('excelFiles');
         const analyzeBtn = document.getElementById('analyzeBtn');
         const exportBtn = document.getElementById('exportBtn');
@@ -48,6 +72,11 @@ class ScoreAnalyzer {
                 this.hideError();
             }
         });
+
+        // 새 버튼 리스너
+        if (shareLinkBtn) shareLinkBtn.addEventListener('click', () => this.openShareLink());
+        if (exportSingleBtn) exportSingleBtn.addEventListener('click', () => this.exportAsSingleHtml());
+        if (exportZipBtn) exportZipBtn.addEventListener('click', () => this.exportAsHtml(true));
 
         // Drag & drop 지원 (업로드 섹션 전체)
         if (uploadSection) {
