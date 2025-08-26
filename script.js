@@ -664,172 +664,128 @@ class ScoreAnalyzer {
     }
 
     // Export a complete deployment package with all files
-    async exportAsHtml(createFolder = true) {
-        if (!this.combinedData) {
-            this.showError('먼저 파일을 분석하세요.');
-            return;
-        }
+// ZIP 없이: 현재 #results 화면을 그대로 복제하여 '새 창'으로만 여는 버전
+async exportAsHtml() {
+  try {
+    // 1) 결과 DOM 존재 확인
+    const results = document.getElementById('results');
+    if (!results || results.style.display === 'none') {
+      alert('먼저 "분석 시작"으로 결과를 화면에 표시하세요.');
+      return;
+    }
 
-        const timestamp = new Date();
-        const pad = (n) => String(n).padStart(2, '0');
-        const folderName = `analysis_${timestamp.getFullYear()}${pad(timestamp.getMonth()+1)}${pad(timestamp.getDate())}_${pad(timestamp.getHours())}${pad(timestamp.getMinutes())}`;
+    // 2) #results DOM 복제
+    const clone = results.cloneNode(true);
+    clone.style.display = ''; // 공유 페이지에서는 항상 보이도록
 
-        // Serialize current analysis data
-        const dataJson = JSON.stringify(this.combinedData);
+    // 3) 차트(canvas) → 이미지로 고정 (공유 페이지에서 Chart.js 없이 동일 표시)
+    const origCanvases = results.querySelectorAll('canvas');
+    const cloneCanvases = clone.querySelectorAll('canvas');
+    cloneCanvases.forEach((c, i) => {
+      const src = origCanvases[i];
+      if (!src) return;
+      try {
+        const url = src.toDataURL('image/png');
+        const img = new Image();
+        img.src = url;
+        c.replaceWith(img);
+      } catch (e) {
+        const note = document.createElement('div');
+        note.textContent = '※ 브라우저 정책으로 차트 이미지를 고정하지 못했습니다.';
+        note.style.fontSize = '12px';
+        note.style.color = '#888';
+        c.parentNode.insertBefore(note, c.nextSibling);
+      }
+    });
 
-        // Helper to fetch text
-        const safeFetchText = async (url) => {
-            try {
-                const res = await fetch(url, { cache: 'no-cache' });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                return await res.text();
-            } catch (e) {
-                console.warn('리소스 로드 실패:', url, e);
-                return '';
-            }
-        };
-
-        // Get CSS content
-        let cssContent = await safeFetchText('style.css');
-        
-        // CSS 내용 확인 및 디버깅
-        console.log('CSS 내용 길이:', cssContent.length);
-        if (!cssContent || cssContent.length < 100) {
-            console.warn('CSS를 가져오지 못함, 대체 방법 사용');
-            // style 태그에서 CSS 추출 시도
-            const styleElement = document.querySelector('link[href="style.css"]');
-            if (styleElement) {
-                try {
-                    const response = await fetch(styleElement.href);
-                    cssContent = await response.text();
-                } catch (e) {
-                    console.error('CSS 대체 로드 실패:', e);
-                    // 마지막 fallback - 기본 스타일 제공
-                    cssContent = this.getFallbackCSS();
-                }
-            } else {
-                cssContent = this.getFallbackCSS();
-            }
-        }
-
-        // Get JS content and modify for standalone use
-        let jsContent = await safeFetchText('script.js');
-        console.log('JS 내용 길이:', jsContent.length);
-        if (jsContent) {
-            jsContent = this.createStandaloneScript(jsContent);
-            console.log('수정된 JS 내용 길이:', jsContent.length);
-        } else {
-            console.error('JavaScript 파일을 로드할 수 없습니다');
-            jsContent = this.getFallbackJS();
-        }
-
-        // Create HTML file content
-        const htmlContent = `<!DOCTYPE html>
+    // 4) 공유용 HTML 조립
+    //    - CSS는 절대경로로 걸면 /reports/로 옮겨도 모양이 유지됩니다.
+    //      필요 시 아래 URL을 본인 레포 주소로 맞추세요.
+    const CSS_URL = 'https://ironmins.github.io/school_transcript_analysis/style.css';
+    const resultsHTML = clone.outerHTML;
+    const html = `<!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>배포용 성적 분석 뷰어</title>
-    <style>
-        /* 메인 CSS */
-        ${cssContent}
-        
-        /* 차트 대체 스타일 */
-        .chart-placeholder {
-            width: 100%;
-            height: 350px;
-            background: #f8f9fa;
-            border: 2px dashed #dee2e6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #6c757d;
-            font-size: 1.1rem;
-            border-radius: 8px;
-            flex-direction: column;
-            padding: 20px;
-        }
-        .chart-placeholder h4 {
-            margin-bottom: 15px;
-            color: #333;
-        }
-        .chart-placeholder p {
-            margin: 5px 0;
-        }
-    </style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>(공유) 고1 내신 분석 결과</title>
+  <link rel="stylesheet" href="${CSS_URL}?v=share">
+  <!-- PDF/인쇄용 라이브러리 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body{max-width:1200px;margin:24px auto;padding:0 12px}
+    .upload-section,#loading,#error{display:none !important}
+    .share-toolbar{display:flex; gap:8px; justify-content:flex-end; margin:8px 0 12px}
+    .share-toolbar button{padding:8px 12px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; cursor:pointer}
+    .share-toolbar button:hover{background:#f3f4f6}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>성적 분석 결과 (배포용)</h1>
-            <p>업로드 없이 저장된 분석 결과를 표시합니다</p>
-        </header>
-        <div class="upload-section" style="display:none;"></div>
-        ${document.getElementById('results') ? document.getElementById('results').outerHTML : '<div id="results" class="results-section"></div>'}
-        <div id="loading" class="loading" style="display:none;"></div>
-        <div id="error" class="error-message" style="display:none;"></div>
-        <footer class="app-footer">
-            <div class="footer-right">
-                <div class="credits">Made by NAMGUNG YEON (Seolak high school)</div>
-                <a class="help-btn" href="https://namgungyeon.tistory.com/133" target="_blank" rel="noopener" title="도움말 보기">❔ 도움말</a>
-            </div>
-        </footer>
-    </div>
+  <!-- 상단 툴바: 인쇄/PDF -->
+  <div class="share-toolbar">
+    <button id="btnPrint">인쇄</button>
+    <button id="btnPdf">PDF 저장</button>
+  </div>
 
-    <script>
-        // Preloaded analysis data embedded for offline viewing
-        window.PRELOADED_DATA = ${dataJson};
-    </script>
-    <script src="script.js"></script>
+  ${resultsHTML}
+
+  <script>
+    // 탭 전환만 동작하도록 경량 스크립트
+    document.addEventListener('click', function(e){
+      const btn = e.target.closest('.tab-btn');
+      if(!btn) return;
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const id = btn.dataset.tab; // subjects | grade-analysis | students
+      document.querySelectorAll('.tab-content').forEach(p=>p.classList.remove('active'));
+      const pane = document.getElementById(id + '-tab');
+      if(pane) pane.classList.add('active');
+    }, {capture:true});
+
+    // 인쇄
+    document.getElementById('btnPrint')?.addEventListener('click', ()=>{ window.print(); });
+
+    // PDF 저장 (#results 전체를 캡처)
+    document.getElementById('btnPdf')?.addEventListener('click', async ()=>{
+      const el = document.getElementById('results');
+      if(!el) return;
+      const { jsPDF } = window.jspdf;
+      const canvas = await html2canvas(el, {scale:2, useCORS:true});
+      const pdf = new jsPDF('p', 'pt', 'a4');
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const imgW = pageW - 40; // 좌우 여백
+      const ratio = imgW / canvas.width;
+      const chunkH = (pageH - 40) / ratio;
+      let srcY = 0;
+      while (srcY < canvas.height) {
+        const h = Math.min(chunkH, canvas.height - srcY);
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = h;
+        pageCanvas.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, h, 0, 0, canvas.width, h);
+        const pageImg = pageCanvas.toDataURL('image/png');
+        if (srcY > 0) pdf.addPage();
+        pdf.addImage(pageImg, 'PNG', 20, 20, imgW, h * ratio);
+        srcY += h;
+      }
+      const stamp = new Date().toISOString().replace(/[:.]/g,'-');
+      pdf.save('내신분석_공유_'+stamp+'.pdf');
+    });
+  <\/script>
 </body>
 </html>`;
 
-        // Create ZIP file with JSZip (if available) or download files separately
-        if (typeof JSZip !== 'undefined' && cssContent.length > 100) {
-            // Use JSZip if available and CSS loaded successfully
-            const zip = new JSZip();
-            zip.file("index.html", htmlContent);
-            zip.file("style.css", cssContent || "/* CSS 로드 실패 */");
-            zip.file("script.js", jsContent || "/* JS 로드 실패 */");
-            zip.file("README.txt", 
-                "배포용 성적 분석 뷰어\\n" +
-                "========================\\n\\n" +
-                "사용법:\\n" +
-                "1. index.html 파일을 웹브라우저에서 열어주세요\\n" +
-                "2. 업로드 없이 바로 분석 결과를 확인할 수 있습니다\\n" +
-                "3. index.html에 CSS가 내장되어 있어 단독으로 실행 가능합니다\\n\\n" +
-                "파일 구성:\\n" +
-                "- index.html: 메인 페이지 (CSS 내장)\\n" +
-                "- style.css: 별도 스타일 파일 (참고용)\\n" +
-                "- script.js: 분석 스크립트\\n\\n" +
-                "Made by NAMGUNG YEON (Seolak high school)\\n" +
-                "링크: https://namgungyeon.tistory.com/133"
-            );
-            
-            const content = await zip.generateAsync({type: "blob"});
-            const url = URL.createObjectURL(content);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = folderName + ".zip";
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 0);
-        } else {
-            // Fallback: download files separately
-            this.downloadFile(htmlContent, "index.html", "text/html");
-            setTimeout(() => this.downloadFile(cssContent, "style.css", "text/css"), 500);
-            setTimeout(() => this.downloadFile(jsContent, "script.js", "application/javascript"), 1000);
-            setTimeout(() => {
-                const readme = "배포용 성적 분석 뷰어\\n========================\\n\\n사용법:\\n1. 모든 파일을 같은 폴더에 저장하세요\\n2. index.html 파일을 웹브라우저에서 열어주세요\\n\\nMade by NAMGUNG YEON (Seolak high school)\\n링크: https://namgungyeon.tistory.com/133";
-                this.downloadFile(readme, "README.txt", "text/plain");
-            }, 1500);
-            
-            alert(`배포용 파일들을 다운로드하고 있습니다.\\n\\n모든 파일을 같은 폴더에 저장한 후\\nindex.html 파일을 열어서 사용하세요.`);
-        }
-    }
+    // 5) 새 창으로만 열기 (ZIP/다운로드 없이)
+    const w = window.open('', '_blank');
+    w.document.open(); w.document.write(html); w.document.close();
+
+  } catch (e) {
+    console.error(e);
+    alert('공유용 새 창 생성 중 오류가 발생했습니다.');
+  }
+}
     downloadFile(content, filename, mimeType) {
         const blob = new Blob([content], { type: mimeType + ';charset=utf-8' });
         const url = URL.createObjectURL(blob);
