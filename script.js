@@ -664,34 +664,26 @@ class ScoreAnalyzer {
     }
 
     // Export a complete deployment package with all files
-    async exportAsHtml() {
-  try {
-    // 1) 결과 DOM 존재 확인
-    const results = document.getElementById('results');
-    if (!results || results.style.display === 'none') {
-      alert('먼저 "분석 시작"으로 결과를 화면에 표시하세요.');
-      return;
-    }
+    
+  // 최종본: ZIP 없이 "새 창"으로만 열고, 원본 script.js로 그대로 렌더
+  async exportAsHtml() {
+    try {
+      if (!this.combinedData) {
+        alert('먼저 "분석 시작"으로 분석을 완료해 주세요.');
+        return;
+      }
 
-    // 원본처럼 동작하는 공유 페이지: PRELOADED_DATA를 주입하고 원본 스크립트를 로드
-    if (!this.combinedData) {
-      alert('먼저 "분석 시작"으로 분석을 완료해 주세요.');
-      return;
-    }
+      const CSS_URL        = 'https://ironmins.github.io/school_transcript_analysis/style.css';
+      const SCRIPT_URL     = 'https://ironmins.github.io/school_transcript_analysis/script.js';
+      const XLSX_URL       = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      const CHART_URL      = 'https://cdn.jsdelivr.net/npm/chart.js';
+      const DATALABELS_URL = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2';
+      const JSZIP_URL      = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+      const JSPDF_URL      = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      const H2C_URL        = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
 
-    // 2) 원본과 동일 리소스 경로(필요 시 레포 경로 맞추기)
-    const CSS_URL     = 'https://ironmins.github.io/school_transcript_practice/style.css';
-    const XLSX_URL    = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    const CHART_URL   = 'https://cdn.jsdelivr.net/npm/chart.js';
-    const DATALABELS_URL = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2';
-    const JSZIP_URL   = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-    const JSPDF_URL   = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-    const H2C_URL     = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-    const SCRIPT_URL  = 'https://ironmins.github.io/school_transcript_practice/script.js';
-
-    // 3) 공유용 HTML: PRELOADED_DATA를 주입하고 원본 script.js가 그대로 실행되게 구성
-    const preloaded = JSON.stringify(this.combinedData);
-    const html = `<!DOCTYPE html>
+      const preloaded = JSON.stringify(this.combinedData);
+      const html = `<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
@@ -705,8 +697,8 @@ class ScoreAnalyzer {
   <script src="${JSPDF_URL}"></script>
   <script src="${H2C_URL}"></script>
   <style>
-    .upload-section, #loading, #error { display: none !important; }
     body { max-width: 1200px; margin: 24px auto; padding: 0 12px; }
+    .upload-section, #loading, #error { display: none !important; }
   </style>
 </head>
 <body>
@@ -783,25 +775,36 @@ class ScoreAnalyzer {
 
   <script>window.PRELOADED_DATA = ${preloaded};</script>
   <script src="${SCRIPT_URL}"></script>
-
   <script>
-    window.addEventListener('load', () => {
-      const clickTab = (name) => document.querySelector('.tab-btn[data-tab="'+name+'"]')?.click();
-      setTimeout(() => { clickTab('grade-analysis'); setTimeout(() => { clickTab('subjects'); }, 50); }, 100);
-    });
+    (function start() {
+      function boot() {
+        try {
+          const up = document.querySelector('.upload-section'); if (up) up.style.display = 'none';
+          const rs = document.getElementById('results'); if (rs) rs.style.display = 'block';
+          window.scoreAnalyzer = new ScoreAnalyzer();
+          setTimeout(() => {
+            const clickTab = (name) => document.querySelector('.tab-btn[data-tab="'+name+'"]')?.click();
+            clickTab('grade-analysis');
+            setTimeout(() => clickTab('subjects'), 60);
+          }, 120);
+        } catch (_) {}
+      }
+      if (window.ScoreAnalyzer) boot();
+      else window.addEventListener('load', boot, { once: true });
+    })();
   </script>
 </body>
 </html>`;
 
-    // 4) 새 창으로 열기
-    const w = window.open('', '_blank');
-    w.document.open(); w.document.write(html); w.document.close();
+      const w = window.open('', '_blank');
+      w.document.open(); w.document.write(html); w.document.close();
 
-  } catch (e) {
-    console.error(e);
-    alert('공유용 새 창 생성 중 오류가 발생했습니다.');
+    } catch (e) {
+      console.error(e);
+      alert('공유용 새 창 생성 중 오류가 발생했습니다.');
+    }
   }
-}
+
     downloadFile(content, filename, mimeType) {
         const blob = new Blob([content], { type: mimeType + ';charset=utf-8' });
         const url = URL.createObjectURL(blob);
