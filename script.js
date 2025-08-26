@@ -20,6 +20,7 @@ class ScoreAnalyzer {
                 console.error('PRELOADED_DATA 처리 중 오류:', e);
             }
         }
+    }
     async exportAsHtml() {
       try {
         if (!this.combinedData) {
