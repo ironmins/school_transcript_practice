@@ -45,27 +45,10 @@
                 <div id="fileList" class="file-list" style="display: none;"></div>
                 <div class="action-buttons">
                     <button id="analyzeBtn" class="analyze-btn" disabled>분석 시작</button>
-                    <button id="publishBtn" class="export-btn" disabled title="현재 분석결과를 GitHub Pages에 발행하고 공유 링크 생성">공유 페이지 발행</button>
-                    <button id="publishSettingsBtn" class="export-btn" title="발행 설정">발행 설정</button>
+            <button id="publishBtn" class="export-btn" disabled title="현재 분석결과를 GitHub Pages에 발행하고 공유 링크 생성">공유 페이지 발행</button>
+            <button id="publishSettingsBtn" class="export-btn" title="발행 설정">발행 설정</button>
                 </div>
-            
-    <div id="publishSettingsModal" class="modal" style="display:none;">
-      <div class="modal-content">
-        <h3>공유 발행 설정</h3>
-        <label>GitHub 토큰(PAT): <input type="password" id="ghToken" placeholder="ghp_..." /></label>
-        <label>Owner: <input type="text" id="ghOwner" placeholder="ironmins" /></label>
-        <label>Repo: <input type="text" id="ghRepo" placeholder="school_transcript_practice" /></label>
-        <label>Branch: <input type="text" id="ghBranch" value="main" /></label>
-        <label>Folder(선택): <input type="text" id="ghFolder" placeholder="shares" /></label>
-        <div style="margin-top:8px; display:flex; gap:8px; flex-wrap: wrap;">
-          <button id="savePublishSettingsBtn" class="export-btn">저장</button>
-          <button id="closePublishSettingsBtn" class="export-btn">닫기</button>
-        </div>
-        <p class="help">토큰과 설정은 이 브라우저의 로컬에만 저장됩니다.</p>
-      </div>
-    </div>
-    
-        </div>
+            </div>
 
         <div id="results" class="results-section" style="display: none;">
             <div class="tabs">
@@ -176,5 +159,23 @@
     </div>
 
     <script src="script.js"></script>
+
+<!-- 공유 발행 설정 모달 -->
+<div id="publishSettingsModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <h3>공유 발행 설정</h3>
+    <label>GitHub 토큰(PAT): <input type="password" id="ghToken" placeholder="ghp_..." /></label>
+    <label>Owner: <input type="text" id="ghOwner" placeholder="ironmins" /></label>
+    <label>Repo: <input type="text" id="ghRepo" placeholder="school_transcript_practice" /></label>
+    <label>Branch: <input type="text" id="ghBranch" value="main" /></label>
+    <label>Folder(선택): <input type="text" id="ghFolder" placeholder="shares" /></label>
+    <div style="margin-top:8px; display:flex; gap:8px; flex-wrap: wrap;">
+      <button id="savePublishSettingsBtn" class="export-btn">저장</button>
+      <button id="closePublishSettingsBtn" class="export-btn">닫기</button>
+    </div>
+    <p class="help">토큰과 설정은 이 브라우저의 로컬에만 저장됩니다.</p>
+  </div>
+</div>
+
 </body>
 </html>

@@ -15,7 +15,7 @@ class ScoreAnalyzer {
                 if (results) results.style.display = 'block';
                 this.displayResults();
                 const exportBtn = document.getElementById('exportBtn');
-                if (exportBtn) exportBtn.disabled = false; const publishBtn3 = document.getElementById('publishBtn'); if (publishBtn3) publishBtn3.disabled = false; const publishBtn2 = document.getElementById('publishBtn'); if (publishBtn2) publishBtn2.disabled = false; const publishBtn2 = document.getElementById('publishBtn'); if (publishBtn2) publishBtn2.disabled = false;
+                if (exportBtn) exportBtn.disabled = false;
             } catch (e) {
                 console.error('PRELOADED_DATA 처리 중 오류:', e);
             }
@@ -38,12 +38,6 @@ class ScoreAnalyzer {
         const pdfClassBtn = document.getElementById('pdfClassBtn');
         const uploadSection = document.querySelector('.upload-section');
         const fileLabel = document.querySelector('.file-input-label');
-        const publishBtn = document.getElementById('publishBtn');
-        const publishSettingsBtn = document.getElementById('publishSettingsBtn');
-        const publishSettingsModal = document.getElementById('publishSettingsModal');
-        const savePublishSettingsBtn = document.getElementById('savePublishSettingsBtn');
-        const closePublishSettingsBtn = document.getElementById('closePublishSettingsBtn');
-
 
         fileInput.addEventListener('change', (e) => {
             const files = Array.from(e.target.files);
@@ -52,19 +46,7 @@ class ScoreAnalyzer {
                 this.displayFileList(files);
                 analyzeBtn.disabled = false;
                 this.hideError();
-        if (publishBtn) {
-            publishBtn.addEventListener('click', (e)=>{ e.preventDefault(); this.publishSharePage(); });
-        }
-        if (publishSettingsBtn && publishSettingsModal) {
-            publishSettingsBtn.addEventListener('click', ()=>{ this.loadPublishSettingsToForm(); publishSettingsModal.style.display='flex'; });
-        }
-        if (savePublishSettingsBtn && publishSettingsModal) {
-            savePublishSettingsBtn.addEventListener('click', ()=>{ this.savePublishSettingsFromForm(); publishSettingsModal.style.display='none'; });
-        }
-        if (closePublishSettingsBtn && publishSettingsModal) {
-            closePublishSettingsBtn.addEventListener('click', ()=>{ publishSettingsModal.style.display='none'; });
-        }
-    }
+            }
         });
 
         // Drag & drop 지원 (업로드 섹션 전체)
@@ -208,7 +190,7 @@ class ScoreAnalyzer {
 
             // Enable export button after successful analysis
             const exportBtn = document.getElementById('exportBtn');
-            if (exportBtn) exportBtn.disabled = false; const publishBtn3 = document.getElementById('publishBtn'); if (publishBtn3) publishBtn3.disabled = false; const publishBtn2 = document.getElementById('publishBtn'); if (publishBtn2) publishBtn2.disabled = false; const publishBtn2 = document.getElementById('publishBtn'); if (publishBtn2) publishBtn2.disabled = false;
+            if (exportBtn) exportBtn.disabled = false;
         } catch (error) {
             this.hideLoading();
             this.showError('파일 분석 중 오류가 발생했습니다: ' + error.message);
@@ -1155,7 +1137,7 @@ class ScoreAnalyzer {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    new ScoreAnalyzer();
+    window.__sa = new ScoreAnalyzer();
 });
 `;
     }
@@ -2869,44 +2851,55 @@ let scoreAnalyzer;
 
 // 페이지 로드 시 분석기 초기화
 document.addEventListener('DOMContentLoaded', () => {
-    scoreAnalyzer = new ScoreAnalyzer();
+    scoreAnalyzer = window.__sa = new ScoreAnalyzer();
 });
 
 
-// === 공유 발행 설정 저장/로드 ===
-ScoreAnalyzer.prototype.loadPublishSettings = function() {
-  try { return JSON.parse(localStorage.getItem('publishSettings')||'{}'); } catch { return {}; }
-};
-ScoreAnalyzer.prototype.savePublishSettings = function(cfg) {
-  localStorage.setItem('publishSettings', JSON.stringify(cfg||{}));
-};
-ScoreAnalyzer.prototype.loadPublishSettingsToForm = function() {
-  const cfg = this.loadPublishSettings();
-  const $ = (id)=>document.getElementById(id);
-  if ($('ghToken')) $('ghToken').value = cfg.token || '';
-  if ($('ghOwner')) $('ghOwner').value = cfg.owner || '';
-  if ($('ghRepo')) $('ghRepo').value = cfg.repo || '';
-  if ($('ghBranch')) $('ghBranch').value = cfg.branch || 'main';
-  if ($('ghFolder')) $('ghFolder').value = cfg.folder || 'shares';
-};
-ScoreAnalyzer.prototype.savePublishSettingsFromForm = function() {
-  const $ = (id)=>document.getElementById(id);
-  const cfg = {
-    token:  ($('ghToken')||{}).value || '',
-    owner:  ($('ghOwner')||{}).value || '',
-    repo:   ($('ghRepo')||{}).value || '',
-    branch: ($('ghBranch')||{}).value || 'main',
-    folder: ($('ghFolder')||{}).value || 'shares'
+// ==== Publish Add-on (non-intrusive) ====
+(function(){
+  function $(id){ return document.getElementById(id); }
+
+  const _origDisplay = ScoreAnalyzer && ScoreAnalyzer.prototype && ScoreAnalyzer.prototype.displayResults;
+  if (_origDisplay) {
+    ScoreAnalyzer.prototype.displayResults = function(){
+      const ret = _origDisplay.apply(this, arguments);
+      try {
+        const btn = $('publishBtn');
+        if (btn) btn.disabled = false;
+      } catch(e){}
+      return ret;
+    };
+  }
+
+  ScoreAnalyzer.prototype.loadPublishSettings = function() {
+    try { return JSON.parse(localStorage.getItem('publishSettings')||'{}'); } catch { return {}; }
   };
-  this.savePublishSettings(cfg);
-};
+  ScoreAnalyzer.prototype.savePublishSettings = function(cfg) {
+    localStorage.setItem('publishSettings', JSON.stringify(cfg||{}));
+  };
+  ScoreAnalyzer.prototype.loadPublishSettingsToForm = function() {
+    const cfg = this.loadPublishSettings();
+    if ($('ghToken')) $('ghToken').value = cfg.token || '';
+    if ($('ghOwner')) $('ghOwner').value = cfg.owner || '';
+    if ($('ghRepo')) $('ghRepo').value = cfg.repo || '';
+    if ($('ghBranch')) $('ghBranch').value = cfg.branch || 'main';
+    if ($('ghFolder')) $('ghFolder').value = cfg.folder || 'shares';
+  };
+  ScoreAnalyzer.prototype.savePublishSettingsFromForm = function() {
+    const cfg = {
+      token:  ($('ghToken')||{}).value || '',
+      owner:  ($('ghOwner')||{}).value || '',
+      repo:   ($('ghRepo')||{}).value || '',
+      branch: ($('ghBranch')||{}).value || 'main',
+      folder: ($('ghFolder')||{}).value || 'shares'
+    };
+    this.savePublishSettings(cfg);
+  };
 
-
-// === 공유용 HTML 빌더 (루트에 style.css/script.js가 있다고 가정) ===
-ScoreAnalyzer.prototype.buildShareHtml = function() {
-  const data = this.combinedData || window.PRELOADED_DATA;
-  if (!data) throw new Error('분석 데이터가 없습니다.');
-  const html = `<!DOCTYPE html>
+  ScoreAnalyzer.prototype.buildShareHtml = function() {
+    const data = this.combinedData || window.PRELOADED_DATA;
+    if (!data) throw new Error('분석 데이터가 없습니다.');
+    const html = `<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2931,63 +2924,70 @@ ScoreAnalyzer.prototype.buildShareHtml = function() {
   <div id="error" class="error-message" style="display:none;"></div>
 </div>
 <script>
-window.PRELOADED_DATA = ${JSON.stringify(data)};
+window.PRELOADED_DATA = ${json.dumps({"__placeholder__":"__data__"})};
 </script>
 <script src="../script.js"></script>
 </body>
 </html>`;
-  return html;
-};
+    return html.replace('"__placeholder__":"__data__"', JSON.stringify(this.combinedData || window.PRELOADED_DATA).slice(1,-1));
+  };
 
-
-// === GitHub Pages로 공유 페이지 발행 (main 브랜치, 루트/폴더) ===
-ScoreAnalyzer.prototype.publishSharePage = async function() {
-  const cfg = this.loadPublishSettings();
-  if (!cfg.token || !cfg.owner || !cfg.repo || !cfg.branch) {
-    alert('발행 설정이 필요합니다. [발행 설정] 버튼을 눌러 정보를 저장하세요.');
-    return;
-  }
-  if (!this.combinedData && !window.PRELOADED_DATA) {
-    alert('먼저 분석을 완료하세요.');
-    return;
-  }
-  try {
-    const html = this.buildShareHtml();
-    const b64 = btoa(unescape(encodeURIComponent(html)));
-    const now = new Date();
-    const stamp = now.toISOString().replace(/[-:T]/g,'').slice(0,12);
-    const folder = (cfg.folder||'shares').replace(/^\/+|\/+$/g, '');
-    const filename = `share_${stamp}.html`;
-    const path = folder ? `${folder}/${filename}` : filename;
-
-    const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${path}`;
-    const res = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `token ${cfg.token}`,
-        'Accept': 'application/vnd.github+json'
-      },
-      body: JSON.stringify({
-        message: `publish: ${filename}`,
-        content: b64,
-        branch: cfg.branch
-      })
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(()=> ({}));
-      console.error('GitHub API error', err);
-      throw new Error('GitHub 업로드 실패');
+  ScoreAnalyzer.prototype.publishSharePage = async function() {
+    const cfg = this.loadPublishSettings();
+    if (!cfg.token || !cfg.owner || !cfg.repo || !cfg.branch) {
+      alert('발행 설정이 필요합니다. [발행 설정]에서 정보를 저장하세요.');
+      return;
     }
-    const shareUrl = `https://${cfg.owner}.github.io/${cfg.repo}/${path}`;
-    // 새 탭 열기 + 복사
+    if (!this.combinedData && !window.PRELOADED_DATA) {
+      alert('먼저 분석을 완료하세요.');
+      return;
+    }
     try {
-      const w = window.open('about:blank', '_blank', 'noopener');
-      if (w && !w.closed) w.location.replace(shareUrl);
-      if (navigator.clipboard?.writeText) navigator.clipboard.writeText(shareUrl);
-    } catch {}
-    alert(`공유 페이지 발행 완료:\n${shareUrl}\n(주소를 클립보드에 복사했습니다.)`);
-  } catch (e) {
-    console.error(e);
-    alert('발행 중 문제가 발생했습니다.');
-  }
-};
+      const html = this.buildShareHtml();
+      const b64 = btoa(unescape(encodeURIComponent(html)));
+      const now = new Date();
+      const stamp = now.toISOString().replace(/[-:T]/g,'').slice(0,12);
+      const folder = (cfg.folder||'shares').replace(/^\/+|\/+$/g, '');
+      const filename = `share_${stamp}.html`;
+      const path = folder ? `${folder}/${filename}` : filename;
+      const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${path}`;
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${cfg.token}`,
+          'Accept': 'application/vnd.github+json'
+        },
+        body: JSON.stringify({ message: `publish: ${filename}`, content: b64, branch: cfg.branch })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(()=> ({}));
+        console.error('GitHub API error', err);
+        throw new Error('GitHub 업로드 실패');
+      }
+      const shareUrl = `https://${cfg.owner}.github.io/${cfg.repo}/${path}`;
+      try {
+        const w = window.open('about:blank', '_blank', 'noopener');
+        if (w && !w.closed) w.location.replace(shareUrl);
+        if (navigator.clipboard?.writeText) navigator.clipboard.writeText(shareUrl);
+      } catch {}
+      alert(`공유 페이지 발행 완료:\n${shareUrl}\n(주소를 클립보드에 복사했습니다.)`);
+    } catch(e){
+      console.error(e);
+      alert('발행 중 문제가 발생했습니다.');
+    }
+  };
+
+  // Wire buttons after DOM ready, get instance via factory override
+  document.addEventListener('DOMContentLoaded', function(){
+    const publishBtn = $('publishBtn');
+    const publishSettingsBtn = $('publishSettingsBtn');
+    const modal = $('publishSettingsModal');
+    const saveBtn = $('savePublishSettingsBtn');
+    const closeBtn = $('closePublishSettingsBtn');
+    if (publishBtn) publishBtn.addEventListener('click', (e)=>{ e.preventDefault(); if (window.__sa) window.__sa.publishSharePage(); });
+    if (publishSettingsBtn && modal) publishSettingsBtn.addEventListener('click', ()=>{ if (window.__sa) window.__sa.loadPublishSettingsToForm(); modal.style.display='flex'; });
+    if (saveBtn && modal) saveBtn.addEventListener('click', ()=>{ if (window.__sa) window.__sa.savePublishSettingsFromForm(); modal.style.display='none'; });
+    if (closeBtn && modal) closeBtn.addEventListener('click', ()=>{ modal.style.display='none'; });
+  });
+
+})();
