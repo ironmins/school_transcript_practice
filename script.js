@@ -2860,9 +2860,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // === 링크 공유 (해시 기반) ===
+
 SchoolTranscriptApp.prototype.openShareLink = function() {
   try {
-    const data = this && this.combinedData ? this.combinedData : (window.PRELOADED_DATA || null);
+    const data = (this && this.combinedData) ? this.combinedData : (window.PRELOADED_DATA || null);
     if (!data) {
       alert('먼저 분석을 완료하세요.');
       return;
@@ -2873,13 +2874,42 @@ SchoolTranscriptApp.prototype.openShareLink = function() {
       : encodeURIComponent(json);
     const base = window.location.origin + window.location.pathname;
     const url = base + '#data=' + packed;
+
     if (url.length > 180000) {
-      alert('데이터가 커서 링크가 너무 깁니다. 이 경우 ZIP 내보내기 또는 페이지 업로드 방식을 사용하세요.');
-      return;
+      alert('데이터가 커서 링크가 매우 깁니다. 메신저에서 잘릴 수 있어 ZIP 배포를 권합니다.');
     }
-    window.open(url, '_blank', 'noopener');
+
+    let win = null;
+    try {
+      win = window.open('', '_blank', 'noopener');
+      if (win && !win.closed) {
+        win.location.href = url;
+        return;
+      }
+    } catch (_) {}
+
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (_) {}
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url);
+        alert('팝업이 차단된 것 같습니다. 링크를 클립보드에 복사했습니다. 새 탭에 붙여넣어 열어주세요.');
+        return;
+      }
+    } catch (_) {}
+
+    window.location.href = url;
   } catch (e) {
     console.error(e);
     alert('링크 생성 중 문제가 발생했습니다.');
   }
 };
+
