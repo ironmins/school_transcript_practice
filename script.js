@@ -5,27 +5,7 @@ class ScoreAnalyzer {
         this.selectedFiles = null; // 사용자가 선택/드롭한 파일 목록
         this.initializeEventListeners();
 
-        
-        // 해시(#data=...)에 공유 데이터가 있으면 복원
-        try {
-            const hash = window.location.hash || '';
-            const m = hash.match(/data=([^&]+)/);
-            if (m) {
-                let decoded = null;
-                if (window.LZString && typeof window.LZString.decompressFromEncodedURIComponent === 'function') {
-                    decoded = window.LZString.decompressFromEncodedURIComponent(m[1]);
-                }
-                if (!decoded) {
-                    decoded = decodeURIComponent(m[1]);
-                }
-                if (decoded) {
-                    window.PRELOADED_DATA = JSON.parse(decoded);
-                }
-            }
-        } catch (e) {
-            console.warn('해시 데이터 복원 실패:', e);
-        }
-// If the page provides preloaded analysis data, render directly
+        // If the page provides preloaded analysis data, render directly
         if (window.PRELOADED_DATA) {
             try {
                 this.combinedData = window.PRELOADED_DATA;
@@ -34,10 +14,8 @@ class ScoreAnalyzer {
                 const results = document.getElementById('results');
                 if (results) results.style.display = 'block';
                 this.displayResults();
-                
-      var shareBtn = document.getElementById("shareLinkBtn"); if (shareBtn) shareBtn.disabled = false;
-const exportBtn = document.getElementById('exportBtn');
-                if (exportBtn) exportBtn.disabled = false;
+                const exportBtn = document.getElementById('exportBtn');
+                if (exportBtn) exportBtn.disabled = false; const publishBtn3 = document.getElementById('publishBtn'); if (publishBtn3) publishBtn3.disabled = false; const publishBtn2 = document.getElementById('publishBtn'); if (publishBtn2) publishBtn2.disabled = false; const publishBtn2 = document.getElementById('publishBtn'); if (publishBtn2) publishBtn2.disabled = false;
             } catch (e) {
                 console.error('PRELOADED_DATA 처리 중 오류:', e);
             }
@@ -60,21 +38,33 @@ const exportBtn = document.getElementById('exportBtn');
         const pdfClassBtn = document.getElementById('pdfClassBtn');
         const uploadSection = document.querySelector('.upload-section');
         const fileLabel = document.querySelector('.file-input-label');
+        const publishBtn = document.getElementById('publishBtn');
+        const publishSettingsBtn = document.getElementById('publishSettingsBtn');
+        const publishSettingsModal = document.getElementById('publishSettingsModal');
+        const savePublishSettingsBtn = document.getElementById('savePublishSettingsBtn');
+        const closePublishSettingsBtn = document.getElementById('closePublishSettingsBtn');
 
-        
-        // 링크 공유 버튼 리스너
-        const shareLinkBtn = document.getElementById('shareLinkBtn');
-        if (shareLinkBtn) {
-            shareLinkBtn.addEventListener('click', (ev) => { ev.preventDefault(); this.openShareLink(); }, { passive: true });
-        }
-fileInput.addEventListener('change', (e) => {
+
+        fileInput.addEventListener('change', (e) => {
             const files = Array.from(e.target.files);
             if (files.length > 0) {
                 this.selectedFiles = files;
                 this.displayFileList(files);
                 analyzeBtn.disabled = false;
                 this.hideError();
-            }
+        if (publishBtn) {
+            publishBtn.addEventListener('click', (e)=>{ e.preventDefault(); this.publishSharePage(); });
+        }
+        if (publishSettingsBtn && publishSettingsModal) {
+            publishSettingsBtn.addEventListener('click', ()=>{ this.loadPublishSettingsToForm(); publishSettingsModal.style.display='flex'; });
+        }
+        if (savePublishSettingsBtn && publishSettingsModal) {
+            savePublishSettingsBtn.addEventListener('click', ()=>{ this.savePublishSettingsFromForm(); publishSettingsModal.style.display='none'; });
+        }
+        if (closePublishSettingsBtn && publishSettingsModal) {
+            closePublishSettingsBtn.addEventListener('click', ()=>{ publishSettingsModal.style.display='none'; });
+        }
+    }
         });
 
         // Drag & drop 지원 (업로드 섹션 전체)
@@ -214,13 +204,11 @@ fileInput.addEventListener('change', (e) => {
             
             this.combineAllData();
             this.displayResults();
-            
-      var shareBtn2 = document.getElementById("shareLinkBtn"); if (shareBtn2) shareBtn2.disabled = false;
-this.hideLoading();
+            this.hideLoading();
 
             // Enable export button after successful analysis
             const exportBtn = document.getElementById('exportBtn');
-            if (exportBtn) exportBtn.disabled = false;
+            if (exportBtn) exportBtn.disabled = false; const publishBtn3 = document.getElementById('publishBtn'); if (publishBtn3) publishBtn3.disabled = false; const publishBtn2 = document.getElementById('publishBtn'); if (publishBtn2) publishBtn2.disabled = false; const publishBtn2 = document.getElementById('publishBtn'); if (publishBtn2) publishBtn2.disabled = false;
         } catch (error) {
             this.hideLoading();
             this.showError('파일 분석 중 오류가 발생했습니다: ' + error.message);
@@ -2885,57 +2873,121 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// === 링크 공유 (해시 기반) ===
-
-ScoreAnalyzer.prototype.openShareLink = function() {
-  try {
-    const data = (this && this.combinedData) ? this.combinedData : (window.PRELOADED_DATA || null);
-    if (!data) {
-      alert('먼저 분석을 완료하세요.');
-      return;
-    }
-    const json = JSON.stringify(data);
-    const packed = (window.LZString)
-      ? window.LZString.compressToEncodedURIComponent(json)
-      : encodeURIComponent(json);
-    const base = window.location.origin + window.location.pathname;
-    const url = base + '#data=' + packed;
-
-    if (url.length > 180000) {
-      alert('데이터가 커서 링크가 매우 깁니다. 메신저에서 잘릴 수 있어 ZIP 배포를 권합니다.');
-    }
-
-    let win = null;
-    try {
-      win = window.open('', '_blank', 'noopener');
-      if (win && !win.closed) {
-        win.location.href = url;
-        return;
-      }
-    } catch (_) {}
-
-    try {
-      const a = document.createElement('a');
-      a.href = url;
-      a.target = '_blank';
-      a.rel = 'noopener';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } catch (_) {}
-
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url);
-        alert('팝업이 차단된 것 같습니다. 링크를 클립보드에 복사했습니다. 새 탭에 붙여넣어 열어주세요.');
-        return;
-      }
-    } catch (_) {}
-
-    window.location.href = url;
-  } catch (e) {
-    console.error(e);
-    alert('링크 생성 중 문제가 발생했습니다.');
-  }
+// === 공유 발행 설정 저장/로드 ===
+ScoreAnalyzer.prototype.loadPublishSettings = function() {
+  try { return JSON.parse(localStorage.getItem('publishSettings')||'{}'); } catch { return {}; }
+};
+ScoreAnalyzer.prototype.savePublishSettings = function(cfg) {
+  localStorage.setItem('publishSettings', JSON.stringify(cfg||{}));
+};
+ScoreAnalyzer.prototype.loadPublishSettingsToForm = function() {
+  const cfg = this.loadPublishSettings();
+  const $ = (id)=>document.getElementById(id);
+  if ($('ghToken')) $('ghToken').value = cfg.token || '';
+  if ($('ghOwner')) $('ghOwner').value = cfg.owner || '';
+  if ($('ghRepo')) $('ghRepo').value = cfg.repo || '';
+  if ($('ghBranch')) $('ghBranch').value = cfg.branch || 'main';
+  if ($('ghFolder')) $('ghFolder').value = cfg.folder || 'shares';
+};
+ScoreAnalyzer.prototype.savePublishSettingsFromForm = function() {
+  const $ = (id)=>document.getElementById(id);
+  const cfg = {
+    token:  ($('ghToken')||{}).value || '',
+    owner:  ($('ghOwner')||{}).value || '',
+    repo:   ($('ghRepo')||{}).value || '',
+    branch: ($('ghBranch')||{}).value || 'main',
+    folder: ($('ghFolder')||{}).value || 'shares'
+  };
+  this.savePublishSettings(cfg);
 };
 
+
+// === 공유용 HTML 빌더 (루트에 style.css/script.js가 있다고 가정) ===
+ScoreAnalyzer.prototype.buildShareHtml = function() {
+  const data = this.combinedData || window.PRELOADED_DATA;
+  if (!data) throw new Error('분석 데이터가 없습니다.');
+  const html = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>성적 분석 결과 (공유)</title>
+<link rel="stylesheet" href="../style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>성적 분석 결과 (배포용)</h1>
+    <p class="muted">업로드 없이 저장된 결과를 표시합니다.</p>
+  </header>
+  <div id="results" class="results-section"></div>
+  <div id="loading" class="loading" style="display:none;"></div>
+  <div id="error" class="error-message" style="display:none;"></div>
+</div>
+<script>
+window.PRELOADED_DATA = ${JSON.stringify(data)};
+</script>
+<script src="../script.js"></script>
+</body>
+</html>`;
+  return html;
+};
+
+
+// === GitHub Pages로 공유 페이지 발행 (main 브랜치, 루트/폴더) ===
+ScoreAnalyzer.prototype.publishSharePage = async function() {
+  const cfg = this.loadPublishSettings();
+  if (!cfg.token || !cfg.owner || !cfg.repo || !cfg.branch) {
+    alert('발행 설정이 필요합니다. [발행 설정] 버튼을 눌러 정보를 저장하세요.');
+    return;
+  }
+  if (!this.combinedData && !window.PRELOADED_DATA) {
+    alert('먼저 분석을 완료하세요.');
+    return;
+  }
+  try {
+    const html = this.buildShareHtml();
+    const b64 = btoa(unescape(encodeURIComponent(html)));
+    const now = new Date();
+    const stamp = now.toISOString().replace(/[-:T]/g,'').slice(0,12);
+    const folder = (cfg.folder||'shares').replace(/^\/+|\/+$/g, '');
+    const filename = `share_${stamp}.html`;
+    const path = folder ? `${folder}/${filename}` : filename;
+
+    const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${path}`;
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${cfg.token}`,
+        'Accept': 'application/vnd.github+json'
+      },
+      body: JSON.stringify({
+        message: `publish: ${filename}`,
+        content: b64,
+        branch: cfg.branch
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(()=> ({}));
+      console.error('GitHub API error', err);
+      throw new Error('GitHub 업로드 실패');
+    }
+    const shareUrl = `https://${cfg.owner}.github.io/${cfg.repo}/${path}`;
+    // 새 탭 열기 + 복사
+    try {
+      const w = window.open('about:blank', '_blank', 'noopener');
+      if (w && !w.closed) w.location.replace(shareUrl);
+      if (navigator.clipboard?.writeText) navigator.clipboard.writeText(shareUrl);
+    } catch {}
+    alert(`공유 페이지 발행 완료:\n${shareUrl}\n(주소를 클립보드에 복사했습니다.)`);
+  } catch (e) {
+    console.error(e);
+    alert('발행 중 문제가 발생했습니다.');
+  }
+};
