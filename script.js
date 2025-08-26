@@ -2988,6 +2988,116 @@ window.PRELOADED_DATA = ${json.dumps({"__placeholder__":"__data__"})};
     if (publishSettingsBtn && modal) publishSettingsBtn.addEventListener('click', ()=>{ if (window.__sa) window.__sa.loadPublishSettingsToForm(); modal.style.display='flex'; });
     if (saveBtn && modal) saveBtn.addEventListener('click', ()=>{ if (window.__sa) window.__sa.savePublishSettingsFromForm(); modal.style.display='none'; });
     if (closeBtn && modal) closeBtn.addEventListener('click', ()=>{ modal.style.display='none'; });
+
+      // ===== 발행설정 UI & 이벤트 핫픽스 (script.js 맨 아래에 추가) =====
+(function setupPublishSettingsUI(){
+  // 1) 버튼 보장: analyzeBtn 옆에 '공유 페이지 발행' & '발행 설정' 버튼이 없다면 생성
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  if (analyzeBtn) {
+    const container = analyzeBtn.parentElement;
+    if (!document.getElementById('publishBtn')) {
+      const btn = document.createElement('button');
+      btn.id = 'publishBtn';
+      btn.className = 'export-btn';
+      btn.textContent = '공유 페이지 발행';
+      btn.title = '현재 분석결과를 GitHub Pages에 발행하고 공유 링크 생성';
+      btn.disabled = true; // 분석 완료 후 활성화
+      container.appendChild(btn);
+    }
+    if (!document.getElementById('publishSettingsBtn')) {
+      const btn2 = document.createElement('button');
+      btn2.id = 'publishSettingsBtn';
+      btn2.className = 'export-btn';
+      btn2.textContent = '발행 설정';
+      btn2.title = '발행 설정 열기';
+      container.appendChild(btn2);
+    }
+  }
+
+  // 2) 모달 보장: 없으면 body에 주입
+  if (!document.getElementById('publishSettingsModal')) {
+    const modal = document.createElement('div');
+    modal.id = 'publishSettingsModal';
+    modal.className = 'modal';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999;align-items:center;justify-content:center;';
+    modal.innerHTML = `
+      <div class="modal-content" style="background:#111827;color:#E5E7EB;padding:16px;border-radius:12px;width:min(560px,92vw);box-shadow:0 10px 30px rgba(0,0,0,.4);">
+        <h3 style="margin:0 0 12px;font-size:1.1rem;">공유 발행 설정</h3>
+        <label>GitHub 토큰(PAT):<br><input type="password" id="ghToken" placeholder="ghp_..." style="width:100%;padding:8px;border-radius:8px;border:1px solid #374151;background:#0B1220;color:#E5E7EB;"></label>
+        <label style="display:block;margin-top:8px;">Owner:<br><input type="text" id="ghOwner" placeholder="ironmins" style="width:100%;padding:8px;border-radius:8px;border:1px solid #374151;background:#0B1220;color:#E5E7EB;"></label>
+        <label style="display:block;margin-top:8px;">Repo:<br><input type="text" id="ghRepo" placeholder="school_transcript_practice" style="width:100%;padding:8px;border-radius:8px;border:1px solid #374151;background:#0B1220;color:#E5E7EB;"></label>
+        <label style="display:block;margin-top:8px;">Branch:<br><input type="text" id="ghBranch" value="main" style="width:100%;padding:8px;border-radius:8px;border:1px solid #374151;background:#0B1220;color:#E5E7EB;"></label>
+        <label style="display:block;margin-top:8px;">Folder(선택):<br><input type="text" id="ghFolder" placeholder="shares" style="width:100%;padding:8px;border-radius:8px;border:1px solid #374151;background:#0B1220;color:#E5E7EB;"></label>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button id="savePublishSettingsBtn" class="export-btn">저장</button>
+          <button id="closePublishSettingsBtn" class="export-btn">닫기</button>
+        </div>
+        <p style="margin-top:8px;font-size:.85rem;color:#9CA3AF;">토큰과 설정은 이 브라우저의 로컬에만 저장됩니다.</p>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+
+  // 3) 설정 로드/세이브 헬퍼(중복 정의 방지)
+  const loadCfg = () => { try { return JSON.parse(localStorage.getItem('publishSettings')||'{}'); } catch { return {}; } };
+  const saveCfg = (cfg) => localStorage.setItem('publishSettings', JSON.stringify(cfg||{}));
+
+  function fillForm(){
+    const cfg = loadCfg();
+    const $ = id=>document.getElementById(id);
+    if ($('ghToken'))  $('ghToken').value  = cfg.token  || '';
+    if ($('ghOwner'))  $('ghOwner').value  = cfg.owner  || '';
+    if ($('ghRepo'))   $('ghRepo').value   = cfg.repo   || '';
+    if ($('ghBranch')) $('ghBranch').value = cfg.branch || 'main';
+    if ($('ghFolder')) $('ghFolder').value = cfg.folder || 'shares';
+  }
+  function grabForm(){
+    const $ = id=>document.getElementById(id);
+    return {
+      token:  ($('ghToken')||{}).value  || '',
+      owner:  ($('ghOwner')||{}).value  || '',
+      repo:   ($('ghRepo')||{}).value   || '',
+      branch: ($('ghBranch')||{}).value || 'main',
+      folder: ($('ghFolder')||{}).value || 'shares'
+    };
+  }
+
+  // 4) 이벤트 연결
+  const publishSettingsBtn = document.getElementById('publishSettingsBtn');
+  const modal = document.getElementById('publishSettingsModal');
+  const saveBtn = document.getElementById('savePublishSettingsBtn');
+  const closeBtn = document.getElementById('closePublishSettingsBtn');
+
+  if (publishSettingsBtn && modal) {
+    publishSettingsBtn.addEventListener('click', () => {
+      fillForm();
+      modal.style.display = 'flex'; // ← 여기서 반드시 보이게
+    });
+  }
+  if (saveBtn && modal) {
+    saveBtn.addEventListener('click', () => {
+      saveCfg(grabForm());
+      modal.style.display = 'none';
+    });
+  }
+  if (closeBtn && modal) {
+    closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+  }
+
+  // 5) 분석 완료 후 '공유 페이지 발행' 버튼 활성화 연결(원본 흐름에 안전하게 훅)
+  const enablePublishIfReady = () => {
+    const hasResults = !!document.getElementById('results') && document.getElementById('results').style.display !== 'none';
+    const btn = document.getElementById('publishBtn');
+    if (btn && (window.PRELOADED_DATA || hasResults)) btn.disabled = false;
+  };
+  // 첫 진입(공유 페이지)에서도 활성화
+  document.addEventListener('DOMContentLoaded', enablePublishIfReady);
+  // 분석 버튼을 눌러도 비동기로 그려지므로, 약간 지연 체크
+  const observer = new MutationObserver(enablePublishIfReady);
+  const target = document.getElementById('results') || document.body;
+  observer.observe(target, { childList:true, subtree:true, attributes:true });
+
+})();
+
   });
 
 })();
