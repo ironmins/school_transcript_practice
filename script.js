@@ -673,8 +673,8 @@ class ScoreAnalyzer {
         return;
       }
 
-      const CSS_URL        = 'https://ironmins.github.io/school_transcript_analysis/style.css';
-      const SCRIPT_URL     = 'https://ironmins.github.io/school_transcript_analysis/script.js';
+      const CSS_URL        = 'https://ironmins.github.io/school_transcript_practice/style.css';
+      const SCRIPT_URL     = 'https://ironmins.github.io/school_transcript_practice/script.js';
       const XLSX_URL       = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
       const CHART_URL      = 'https://cdn.jsdelivr.net/npm/chart.js';
       const DATALABELS_URL = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2';
