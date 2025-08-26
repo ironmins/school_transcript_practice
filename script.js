@@ -4,20 +4,6 @@ class ScoreAnalyzer {
         this.combinedData = null; // 통합된 분석 데이터
         this.selectedFiles = null; // 사용자가 선택/드롭한 파일 목록
         this.initializeEventListeners();
-        // 🔹 URL 해시에 공유 데이터가 있으면 복원
-        const hash = window.location.hash || '';
-        const m = hash.match(/data=([^&]+)/);
-        if (m && window.LZString) {
-            try {
-                const decoded = window.LZString.decompressFromEncodedURIComponent(m[1]);
-                if (decoded) {
-                    window.PRELOADED_DATA = JSON.parse(decoded);
-                }
-            } catch (e) {
-                console.warn('해시 데이터 복원 실패:', e);
-            }
-        }
-
 
         // If the page provides preloaded analysis data, render directly
         if (window.PRELOADED_DATA) {
@@ -28,14 +14,9 @@ class ScoreAnalyzer {
                 const results = document.getElementById('results');
                 if (results) results.style.display = 'block';
                 this.displayResults();
-            // 내보내기 버튼 활성화
-            const shareLinkBtn = document.getElementById('shareLinkBtn');
-            const exportSingleBtn = document.getElementById('exportSingleBtn');
-            const exportZipBtn = document.getElementById('exportZipBtn');
-            if (shareLinkBtn) shareLinkBtn.disabled = false;
-            if (exportSingleBtn) exportSingleBtn.disabled = false;
-            if (exportZipBtn) exportZipBtn.disabled = false;
-                const exportBtn = document.getElementById('exportBtn');
+                
+      var shareBtn = document.getElementById("shareLinkBtn"); if (shareBtn) shareBtn.disabled = false;
+const exportBtn = document.getElementById('exportBtn');
                 if (exportBtn) exportBtn.disabled = false;
             } catch (e) {
                 console.error('PRELOADED_DATA 처리 중 오류:', e);
@@ -44,9 +25,6 @@ class ScoreAnalyzer {
     }
 
     initializeEventListeners() {
-  const shareLinkBtn = document.getElementById('shareLinkBtn');
-  const exportSingleBtn = document.getElementById('exportSingleBtn');
-  const exportZipBtn = document.getElementById('exportZipBtn');
         const fileInput = document.getElementById('excelFiles');
         const analyzeBtn = document.getElementById('analyzeBtn');
         const exportBtn = document.getElementById('exportBtn');
@@ -72,11 +50,6 @@ class ScoreAnalyzer {
                 this.hideError();
             }
         });
-
-        // 새 버튼 리스너
-        if (shareLinkBtn) shareLinkBtn.addEventListener('click', () => this.openShareLink());
-        if (exportSingleBtn) exportSingleBtn.addEventListener('click', () => this.exportAsSingleHtml());
-        if (exportZipBtn) exportZipBtn.addEventListener('click', () => this.exportAsHtml(true));
 
         // Drag & drop 지원 (업로드 섹션 전체)
         if (uploadSection) {
@@ -215,7 +188,9 @@ class ScoreAnalyzer {
             
             this.combineAllData();
             this.displayResults();
-            this.hideLoading();
+            
+      var shareBtn2 = document.getElementById("shareLinkBtn"); if (shareBtn2) shareBtn2.disabled = false;
+this.hideLoading();
 
             // Enable export button after successful analysis
             const exportBtn = document.getElementById('exportBtn');
@@ -2882,3 +2857,29 @@ let scoreAnalyzer;
 document.addEventListener('DOMContentLoaded', () => {
     scoreAnalyzer = new ScoreAnalyzer();
 });
+
+
+// === 링크 공유 (해시 기반) ===
+SchoolTranscriptApp.prototype.openShareLink = function() {
+  try {
+    const data = this && this.combinedData ? this.combinedData : (window.PRELOADED_DATA || null);
+    if (!data) {
+      alert('먼저 분석을 완료하세요.');
+      return;
+    }
+    const json = JSON.stringify(data);
+    const packed = (window.LZString)
+      ? window.LZString.compressToEncodedURIComponent(json)
+      : encodeURIComponent(json);
+    const base = window.location.origin + window.location.pathname;
+    const url = base + '#data=' + packed;
+    if (url.length > 180000) {
+      alert('데이터가 커서 링크가 너무 깁니다. 이 경우 ZIP 내보내기 또는 페이지 업로드 방식을 사용하세요.');
+      return;
+    }
+    window.open(url, '_blank', 'noopener');
+  } catch (e) {
+    console.error(e);
+    alert('링크 생성 중 문제가 발생했습니다.');
+  }
+};
