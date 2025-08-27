@@ -1,10 +1,6 @@
 class ScoreAnalyzer {
     constructor() {
-        // bind instance methods for event listeners
-        this.openShareWindow = this.openShareWindow.bind(this);
-        this.downloadShareHtml = this.downloadShareHtml.bind(this);
-        this.buildShareHtml = this.buildShareHtml.bind(this);
-    
+
         this.filesData = new Map(); // 파일명 -> 분석 데이터 매핑
         this.combinedData = null; // 통합된 분석 데이터
         this.selectedFiles = null; // 사용자가 선택/드롭한 파일 목록
@@ -679,7 +675,87 @@ class ScoreAnalyzer {
     }
 
     // Export a complete deployment package with all files
-    async exportAsHtml(createFolder = true) {
+    
+    // === 공유용 페이지 생성 메서드(클래스 필드 버전) ===
+    buildShareHtml = async () => {
+        if (!this.combinedData) {
+            this.showError('먼저 파일을 분석하세요.');
+            return '';
+        }
+        const safeFetchText = async (url) => {
+            try {
+                const res = await fetch(url, { cache: 'no-cache' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return await res.text();
+            } catch (e) {
+                console.warn('리소스 로드 실패:', url, e);
+                return '';
+            }
+        };
+        let cssContent = '';
+        try { cssContent = await safeFetchText('style.css'); } catch {}
+        let jsContent = '';
+        try { jsContent = await safeFetchText('script.js'); } catch {}
+        const resultsEl = document.getElementById('results');
+        const resultsHTML = resultsEl ? resultsEl.outerHTML : '<div id="results" class="results-section"></div>';
+        const dataJson = JSON.stringify(this.combinedData);
+        const html = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>공유용 성적 분석 뷰어</title>
+  <style>${cssContent}</style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>성적 분석 결과 (공유용)</h1>
+      <p>업로드 없이 저장된 분석 결과를 표시합니다</p>
+    </header>
+    <div class="upload-section" style="display:none;"></div>
+    ${resultsHTML}
+    <div id="loading" class="loading" style="display:none;"></div>
+    <div id="error" class="error-message" style="display:none;"></div>
+    <footer class="app-footer">
+      <div class="footer-right">
+        <div class="credits">Made by NAMGUNG YEON (Seolak high school)</div>
+        <a class="help-btn" href="https://namgungyeon.tistory.com/133" target="_blank" rel="noopener" title="도움말 보기">❔ 도움말</a>
+      </div>
+    </footer>
+  </div>
+  <script>window.PRELOADED_DATA = ${dataJson};</script>
+  <script>
+${jsContent}
+  </script>
+</body>
+</html>`;
+        return html;
+    };
+
+    openShareWindow = async () => {
+        const html = await this.buildShareHtml();
+        if (!html) return;
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+    };
+
+    downloadShareHtml = async () => {
+        const html = await this.buildShareHtml();
+        if (!html) return;
+        const ts = new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        const filename = `analysis_${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}_${pad(ts.getHours())}${pad(ts.getMinutes())}.html`;
+        this.downloadFile(html, filename, 'text/html');
+    };
+async exportAsHtml(createFolder = true) {
         if (!this.combinedData) {
             this.showError('먼저 파일을 분석하세요.');
             return;
