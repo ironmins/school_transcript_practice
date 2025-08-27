@@ -678,7 +678,7 @@ class ScoreAnalyzer {
     
     // === 공유용 페이지 생성 메서드(클래스 필드 버전) ===
     
-    // === 공유용 페이지 생성 메서드(클래스 필드 버전) ===
+    // === 공유용 페이지 생성 메서드(안전한 인라인 방식) ===
     buildShareHtml = async () => {
         if (!this.combinedData) {
             this.showError('먼저 파일을 분석하세요.');
@@ -697,9 +697,11 @@ class ScoreAnalyzer {
         let cssContent = '';
         try { cssContent = await safeFetchText('style.css'); } catch {}
         let jsContent = '';
-        try { jsContent = await safeFetchText('script.js'); } catch {}        
+        try { jsContent = await safeFetchText('script.js'); } catch {}
 
-        // 업로드 섹션은 원본과 동일한 ID를 가진 최소 마크업을 숨김 상태로 포함시켜 초기화 에러 방지
+        // data URI로 스크립트 포함(템플릿 리터럴 중첩 문제 방지)
+        const jsDataUri = 'data:text/javascript;base64,' + btoa(unescape(encodeURIComponent(jsContent)));
+
         const uploadStub = `
         <div class="upload-section" style="display:none;">
           <input type="file" id="excelFiles" multiple />
@@ -707,7 +709,6 @@ class ScoreAnalyzer {
           <button id="exportBtn"></button>
         </div>`;
 
-        // 결과 섹션은 원본 템플릿으로 초기화(차트/테이블은 JS가 PRELOADED_DATA로 재생성)
         const resultsHTML = `<div id="results" class="results-section" style="display: none;">
             <div class="tabs">
                 <button class="tab-btn active" data-tab="subjects">과목별 분석</button>
@@ -838,10 +839,7 @@ class ScoreAnalyzer {
   </div>
 
   <script>window.PRELOADED_DATA = ${dataJson};</script>
-  <script>
-  // 원본 스크립트를 그대로 로드하여 PRELOADED_DATA 경로로 렌더링
-  ${jsContent}
-  </script>
+  <script src="${jsDataUri}"></script>
 </body>
 </html>`;
         return html;
