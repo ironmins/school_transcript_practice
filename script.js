@@ -14,10 +14,7 @@ class ScoreAnalyzer {
                 const results = document.getElementById('results');
                 if (results) results.style.display = 'block';
                 this.displayResults();
-                const exportBtn = document.getElementById('exportBtn');
-        const openShareBtn = document.getElementById('openShareBtn');
-                if (exportBtn) exportBtn.disabled = false;
-            if (openShareBtn) openShareBtn.disabled = false;
+                this.toggleShareButtons(true);
             } catch (e) {
                 console.error('PRELOADED_DATA 처리 중 오류:', e);
             }
@@ -196,11 +193,7 @@ class ScoreAnalyzer {
             this.hideLoading();
 
             // Enable export/share buttons after successful analysis
-            const exportBtn = document.getElementById('exportBtn');
-            const openShareBtn = document.getElementById('openShareBtn');
-        const openShareBtn = document.getElementById('openShareBtn');
-            if (exportBtn) exportBtn.disabled = false;
-            if (openShareBtn) openShareBtn.disabled = false;
+            this.toggleShareButtons(true);
         } catch (error) {
             this.hideLoading();
             this.showError('파일 분석 중 오류가 발생했습니다: ' + error.message);
