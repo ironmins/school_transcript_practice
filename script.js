@@ -1,4 +1,3 @@
-window.$ = (id) => document.getElementById(id);
 class ScoreAnalyzer {
     constructor() {
         this.filesData = new Map(); // 파일명 -> 분석 데이터 매핑
@@ -16,8 +15,7 @@ class ScoreAnalyzer {
                 if (results) results.style.display = 'block';
                 this.displayResults();
                 const exportBtn = document.getElementById('exportBtn');
-                if (exportBtn) exportBtn.disabled = false; const __pb2 = document.getElementById('publishBtn'); if (__pb2) __pb2.disabled = false;
-            const __pb = document.getElementById('publishBtn'); if (__pb) __pb.disabled = false;
+                if (exportBtn) exportBtn.disabled = false;
             } catch (e) {
                 console.error('PRELOADED_DATA 처리 중 오류:', e);
             }
@@ -192,8 +190,7 @@ class ScoreAnalyzer {
 
             // Enable export button after successful analysis
             const exportBtn = document.getElementById('exportBtn');
-            if (exportBtn) exportBtn.disabled = false; const __pb2 = document.getElementById('publishBtn'); if (__pb2) __pb2.disabled = false;
-            const __pb = document.getElementById('publishBtn'); if (__pb) __pb.disabled = false;
+            if (exportBtn) exportBtn.disabled = false;
         } catch (error) {
             this.hideLoading();
             this.showError('파일 분석 중 오류가 발생했습니다: ' + error.message);
@@ -1140,7 +1137,7 @@ class ScoreAnalyzer {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    window.__sa = new ScoreAnalyzer();
+    new ScoreAnalyzer();
 });
 `;
     }
@@ -2854,253 +2851,38 @@ let scoreAnalyzer;
 
 // 페이지 로드 시 분석기 초기화
 document.addEventListener('DOMContentLoaded', () => {
-    scoreAnalyzer = window.__sa = new ScoreAnalyzer();
+    scoreAnalyzer = new ScoreAnalyzer();
 });
 
 
-// ==== Publish Add-on (non-intrusive) ====
-(function(){
-  function $(id){ return document.getElementById(id); }
+// 🔗 결과 새 창으로 열기
+document.getElementById("openNewWindowBtn")?.addEventListener("click", () => {
+    if (!window.analyzer?.combinedData) {
+        alert("먼저 분석을 완료해야 새 창을 열 수 있습니다.");
+        return;
+    }
 
-  const _origDisplay = ScoreAnalyzer && ScoreAnalyzer.prototype && ScoreAnalyzer.prototype.displayResults;
-  if (_origDisplay) {
-    ScoreAnalyzer.prototype.displayResults = function(){
-      const ret = _origDisplay.apply(this, arguments);
-      try {
-        const btn = $('publishBtn');
-        if (btn) btn.disabled = false;
-      } catch(e){}
-      return ret;
-    };
-  }
-
-  ScoreAnalyzer.prototype.loadPublishSettings = function() {
-    try { return JSON.parse(localStorage.getItem('publishSettings')||'{}'); } catch { return {}; }
-  };
-  ScoreAnalyzer.prototype.savePublishSettings = function(cfg) {
-    localStorage.setItem('publishSettings', JSON.stringify(cfg||{}));
-  };
-  ScoreAnalyzer.prototype.loadPublishSettingsToForm = function() {
-    const cfg = this.loadPublishSettings();
-    if ($('ghToken')) $('ghToken').value = cfg.token || '';
-    if ($('ghOwner')) $('ghOwner').value = cfg.owner || '';
-    if ($('ghRepo')) $('ghRepo').value = cfg.repo || '';
-    if ($('ghBranch')) $('ghBranch').value = cfg.branch || 'main';
-    if ($('ghFolder')) $('ghFolder').value = cfg.folder || 'shares';
-  };
-  ScoreAnalyzer.prototype.savePublishSettingsFromForm = function() {
-    const cfg = {
-      token:  ($('ghToken')||{}).value || '',
-      owner:  ($('ghOwner')||{}).value || '',
-      repo:   ($('ghRepo')||{}).value || '',
-      branch: ($('ghBranch')||{}).value || 'main',
-      folder: ($('ghFolder')||{}).value || 'shares'
-    };
-    this.savePublishSettings(cfg);
-  };
-
-  ScoreAnalyzer.prototype.buildShareHtml = function() {
-    const data = this.combinedData || window.PRELOADED_DATA;
-    if (!data) throw new Error('분석 데이터가 없습니다.');
-    const html = `<!DOCTYPE html>
+    const analysisData = JSON.stringify(window.analyzer.combinedData);
+    const htmlContent = `
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>성적 분석 결과 (공유)</title>
-<link rel="stylesheet" href="../style.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <meta charset="UTF-8">
+    <title>분석 결과 공유 페이지</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        window.PRELOADED_DATA = ${analysisData};
+    </script>
+    <script src="https://ironmins.github.io/school_transcript_practice/script.js"></script>
+    <link rel="stylesheet" href="https://ironmins.github.io/school_transcript_practice/style.css">
 </head>
 <body>
-<div class="container">
-  <header>
-    <h1>성적 분석 결과 (배포용)</h1>
-    <p class="muted">업로드 없이 저장된 결과를 표시합니다.</p>
-  </header>
-  <div id="results" class="results-section"></div>
-  <div id="loading" class="loading" style="display:none;"></div>
-  <div id="error" class="error-message" style="display:none;"></div>
-</div>
-<script>
-window.PRELOADED_DATA = ${json.dumps({"__placeholder__":"__data__"})};
-</script>
-<script src="../script.js"></script>
+    <div id="results"></div>
 </body>
-</html>`;
-    return html.replace('"__placeholder__":"__data__"', JSON.stringify(this.combinedData || window.PRELOADED_DATA).slice(1,-1));
-  };
+</html>
+    `;
 
-  ScoreAnalyzer.prototype.publishSharePage = async function() {
-    const cfg = this.loadPublishSettings();
-    if (!cfg.token || !cfg.owner || !cfg.repo || !cfg.branch) {
-      alert('발행 설정이 필요합니다. [발행 설정]에서 정보를 저장하세요.');
-      return;
-    }
-    if (!this.combinedData && !window.PRELOADED_DATA) {
-      alert('먼저 분석을 완료하세요.');
-      return;
-    }
-    try {
-      const html = this.buildShareHtml();
-      const b64 = btoa(unescape(encodeURIComponent(html)));
-      const now = new Date();
-      const stamp = now.toISOString().replace(/[-:T]/g,'').slice(0,12);
-      const folder = (cfg.folder||'shares').replace(/^\/+|\/+$/g, '');
-      const filename = `share_${stamp}.html`;
-      const path = folder ? `${folder}/${filename}` : filename;
-      const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${path}`;
-      const res = await fetch(url, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `token ${cfg.token}`,
-          'Accept': 'application/vnd.github+json'
-        },
-        body: JSON.stringify({ message: `publish: ${filename}`, content: b64, branch: cfg.branch })
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(()=> ({}));
-        console.error('GitHub API error', err);
-        throw new Error('GitHub 업로드 실패');
-      }
-      const shareUrl = `https://${cfg.owner}.github.io/${cfg.repo}/${path}`;
-      try {
-        const w = window.open('about:blank', '_blank', 'noopener');
-        if (w && !w.closed) w.location.replace(shareUrl);
-        if (navigator.clipboard?.writeText) navigator.clipboard.writeText(shareUrl);
-      } catch {}
-      alert(`공유 페이지 발행 완료:\n${shareUrl}\n(주소를 클립보드에 복사했습니다.)`);
-    } catch(e){
-      console.error(e);
-      alert('발행 중 문제가 발생했습니다.');
-    }
-  };
-
-  // Wire buttons after DOM ready, get instance via factory override
-  document.addEventListener('DOMContentLoaded', function(){
-    const publishBtn = $('publishBtn');
-    const publishSettingsBtn = $('publishSettingsBtn');
-    const modal = $('publishSettingsModal');
-    const saveBtn = $('savePublishSettingsBtn');
-    const closeBtn = $('closePublishSettingsBtn');
-    if (publishBtn) publishBtn.addEventListener('click', (e)=>{ e.preventDefault(); if (window.__sa) window.__sa.publishSharePage(); });
-    if (publishSettingsBtn && modal) publishSettingsBtn.addEventListener('click', ()=>{ if (window.__sa) window.__sa.loadPublishSettingsToForm(); modal.style.display='flex'; });
-    if (saveBtn && modal) saveBtn.addEventListener('click', ()=>{ if (window.__sa) window.__sa.savePublishSettingsFromForm(); modal.style.display='none'; });
-    if (closeBtn && modal) closeBtn.addEventListener('click', ()=>{ modal.style.display='none'; });
-
-      // ===== 발행설정 UI & 이벤트 핫픽스 (script.js 맨 아래에 추가) =====
-(function setupPublishSettingsUI(){
-  // 1) 버튼 보장: analyzeBtn 옆에 '공유 페이지 발행' & '발행 설정' 버튼이 없다면 생성
-  const analyzeBtn = document.getElementById('analyzeBtn');
-  if (analyzeBtn) {
-    const container = analyzeBtn.parentElement;
-    if (!document.getElementById('publishBtn')) {
-      const btn = document.createElement('button');
-      btn.id = 'publishBtn';
-      btn.className = 'export-btn';
-      btn.textContent = '공유 페이지 발행';
-      btn.title = '현재 분석결과를 GitHub Pages에 발행하고 공유 링크 생성';
-      btn.disabled = true; // 분석 완료 후 활성화
-      container.appendChild(btn);
-    }
-    if (!document.getElementById('publishSettingsBtn')) {
-      const btn2 = document.createElement('button');
-      btn2.id = 'publishSettingsBtn';
-      btn2.className = 'export-btn';
-      btn2.textContent = '발행 설정';
-      btn2.title = '발행 설정 열기';
-      container.appendChild(btn2);
-    }
-  }
-
-  // 2) 모달 보장: 없으면 body에 주입
-  if (!document.getElementById('publishSettingsModal')) {
-    const modal = document.createElement('div');
-    modal.id = 'publishSettingsModal';
-    modal.className = 'modal';
-    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999;align-items:center;justify-content:center;';
-    modal.innerHTML = `
-      <div class="modal-content" style="background:#111827;color:#E5E7EB;padding:16px;border-radius:12px;width:min(560px,92vw);box-shadow:0 10px 30px rgba(0,0,0,.4);">
-        <h3 style="margin:0 0 12px;font-size:1.1rem;">공유 발행 설정</h3>
-        <label>GitHub 토큰(PAT):<br><input type="password" id="ghToken" placeholder="ghp_..." style="width:100%;padding:8px;border-radius:8px;border:1px solid #374151;background:#0B1220;color:#E5E7EB;"></label>
-        <label style="display:block;margin-top:8px;">Owner:<br><input type="text" id="ghOwner" placeholder="ironmins" style="width:100%;padding:8px;border-radius:8px;border:1px solid #374151;background:#0B1220;color:#E5E7EB;"></label>
-        <label style="display:block;margin-top:8px;">Repo:<br><input type="text" id="ghRepo" placeholder="school_transcript_practice" style="width:100%;padding:8px;border-radius:8px;border:1px solid #374151;background:#0B1220;color:#E5E7EB;"></label>
-        <label style="display:block;margin-top:8px;">Branch:<br><input type="text" id="ghBranch" value="main" style="width:100%;padding:8px;border-radius:8px;border:1px solid #374151;background:#0B1220;color:#E5E7EB;"></label>
-        <label style="display:block;margin-top:8px;">Folder(선택):<br><input type="text" id="ghFolder" placeholder="shares" style="width:100%;padding:8px;border-radius:8px;border:1px solid #374151;background:#0B1220;color:#E5E7EB;"></label>
-        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
-          <button id="savePublishSettingsBtn" class="export-btn">저장</button>
-          <button id="closePublishSettingsBtn" class="export-btn">닫기</button>
-        </div>
-        <p style="margin-top:8px;font-size:.85rem;color:#9CA3AF;">토큰과 설정은 이 브라우저의 로컬에만 저장됩니다.</p>
-      </div>`;
-    document.body.appendChild(modal);
-  }
-
-  // 3) 설정 로드/세이브 헬퍼(중복 정의 방지)
-  const loadCfg = () => { try { return JSON.parse(localStorage.getItem('publishSettings')||'{}'); } catch { return {}; } };
-  const saveCfg = (cfg) => localStorage.setItem('publishSettings', JSON.stringify(cfg||{}));
-
-  function fillForm(){
-    const cfg = loadCfg();
-    const $ = id=>document.getElementById(id);
-    if ($('ghToken'))  $('ghToken').value  = cfg.token  || '';
-    if ($('ghOwner'))  $('ghOwner').value  = cfg.owner  || '';
-    if ($('ghRepo'))   $('ghRepo').value   = cfg.repo   || '';
-    if ($('ghBranch')) $('ghBranch').value = cfg.branch || 'main';
-    if ($('ghFolder')) $('ghFolder').value = cfg.folder || 'shares';
-  }
-  function grabForm(){
-    const $ = id=>document.getElementById(id);
-    return {
-      token:  ($('ghToken')||{}).value  || '',
-      owner:  ($('ghOwner')||{}).value  || '',
-      repo:   ($('ghRepo')||{}).value   || '',
-      branch: ($('ghBranch')||{}).value || 'main',
-      folder: ($('ghFolder')||{}).value || 'shares'
-    };
-  }
-
-  // 4) 이벤트 연결
-  const publishSettingsBtn = document.getElementById('publishSettingsBtn');
-  const modal = document.getElementById('publishSettingsModal');
-  const saveBtn = document.getElementById('savePublishSettingsBtn');
-  const closeBtn = document.getElementById('closePublishSettingsBtn');
-
-  if (publishSettingsBtn && modal) {
-    publishSettingsBtn.addEventListener('click', () => {
-      fillForm();
-      modal.style.display = 'flex'; // ← 여기서 반드시 보이게
-    });
-  }
-  if (saveBtn && modal) {
-    saveBtn.addEventListener('click', () => {
-      saveCfg(grabForm());
-      modal.style.display = 'none';
-    });
-  }
-  if (closeBtn && modal) {
-    closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
-  }
-
-  // 5) 분석 완료 후 '공유 페이지 발행' 버튼 활성화 연결(원본 흐름에 안전하게 훅)
-  const enablePublishIfReady = () => {
-    const hasResults = !!document.getElementById('results') && document.getElementById('results').style.display !== 'none';
-    const btn = document.getElementById('publishBtn');
-    if (btn && (window.PRELOADED_DATA || hasResults)) btn.disabled = false;
-  };
-  // 첫 진입(공유 페이지)에서도 활성화
-  document.addEventListener('DOMContentLoaded', enablePublishIfReady);
-  // 분석 버튼을 눌러도 비동기로 그려지므로, 약간 지연 체크
-  const observer = new MutationObserver(enablePublishIfReady);
-  const target = document.getElementById('results') || document.body;
-  observer.observe(target, { childList:true, subtree:true, attributes:true });
-
-})();
-
-  });
-
-})();
+    const newWindow = window.open("", "_blank");
+    newWindow.document.write(htmlContent);
+    newWindow.document.close();
+});
