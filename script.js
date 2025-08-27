@@ -14,7 +14,8 @@ class ScoreAnalyzer {
                 const results = document.getElementById('results');
                 if (results) results.style.display = 'block';
                 this.displayResults();
-                this.toggleShareButtons(true);
+                const exportBtn = document.getElementById('exportBtn');
+                if (exportBtn) exportBtn.disabled = false;
             } catch (e) {
                 console.error('PRELOADED_DATA 처리 중 오류:', e);
             }
@@ -25,7 +26,6 @@ class ScoreAnalyzer {
         const fileInput = document.getElementById('excelFiles');
         const analyzeBtn = document.getElementById('analyzeBtn');
         const exportBtn = document.getElementById('exportBtn');
-        const openShareBtn = document.getElementById('openShareBtn');
         const tabBtns = document.querySelectorAll('.tab-btn');
         const studentSearch = document.getElementById('studentSearch');
         const gradeSelect = document.getElementById('gradeSelect');
@@ -46,6 +46,20 @@ class ScoreAnalyzer {
                 this.displayFileList(files);
                 analyzeBtn.disabled = false;
                 this.hideError();
+
+        const openShareBtn = document.getElementById('openShareBtn');
+        const downloadShareBtn = document.getElementById('downloadShareBtn');
+        if (openShareBtn) {
+            openShareBtn.addEventListener('click', async () => {
+                await this.openShareWindow();
+            });
+        }
+        if (downloadShareBtn) {
+            downloadShareBtn.addEventListener('click', async () => {
+                await this.downloadShareHtml();
+            });
+        }
+
             }
         });
 
@@ -99,10 +113,6 @@ class ScoreAnalyzer {
         analyzeBtn.addEventListener('click', () => {
             this.analyzeFiles();
         });
-
-        if (openShareBtn) {
-            openShareBtn.addEventListener('click', () => this.openShareWindow());
-        }
 
         
 
@@ -192,8 +202,9 @@ class ScoreAnalyzer {
             this.displayResults();
             this.hideLoading();
 
-            // Enable export/share buttons after successful analysis
-            this.toggleShareButtons(true);
+            // Enable export button after successful analysis
+            const exportBtn = document.getElementById('exportBtn');
+            if (exportBtn) exportBtn.disabled = false;
         } catch (error) {
             this.hideLoading();
             this.showError('파일 분석 중 오류가 발생했습니다: ' + error.message);
@@ -659,6 +670,8 @@ class ScoreAnalyzer {
 
     displayResults() {
         document.getElementById('results').style.display = 'block';
+        const shareControls = document.getElementById('shareControls');
+        if (shareControls) shareControls.style.display = 'flex';
         this.displaySubjectAverages();
         this.displayGradeAnalysis();
         this.displayStudentAnalysis();
@@ -830,78 +843,7 @@ class ScoreAnalyzer {
             
             alert(`배포용 파일들을 다운로드하고 있습니다.\\n\\n모든 파일을 같은 폴더에 저장한 후\\nindex.html 파일을 열어서 사용하세요.`);
         }
-    
-    // Build a single-file HTML and open in a new window
-    async buildSingleFileHtml() {
-        if (!this.combinedData) {
-            this.showError('먼저 파일을 분석하세요.');
-            return '';
-        }
-        const safeFetchText = async (url) => {
-            try {
-                const res = await fetch(url, { cache: 'no-cache' });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                return await res.text();
-            } catch (e) {
-                console.warn('리소스 로드 실패:', url, e);
-                return '';
-            }
-        };
-        let cssContent = await safeFetchText('style.css');
-        let jsContent = await safeFetchText('script.js');
-        const dataJson = JSON.stringify(this.combinedData);
-        return `<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>배포용 성적 분석 (단일 HTML)</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<style>${cssContent || ''}</style>
-</head>
-<body>
-<div class="container">
-  <header>
-    <h1>(2022개정) 고등학교 1학년 내신 분석 <span class="badge-lite">Lite</span></h1>
-  </header>
-  <div class="upload-section" style="display:none;"></div>
-  <div id="results" class="results-section"></div>
-  <div id="loading" class="loading" style="display:none;"></div>
-  <div id="error" class="error-message" style="display:none;"></div>
-  <footer class="app-footer">
-    <div class="footer-right">
-      <div class="credits">Made by NAMGUNG YEON (Seolak high school)</div>
-      <a class="help-btn" href="https://namgungyeon.tistory.com/133" target="_blank" rel="noopener">❔ 도움말</a>
-    </div>
-  </footer>
-</div>
-<script>window.PRELOADED_DATA = ${dataJson};</script>
-<script>(function(){${jsContent || ''}\n})();</script>
-</body>
-</html>`;
     }
-
-    async openShareWindow() {
-        const html = await this.buildSingleFileHtml();
-        if (!html) return;
-        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank', 'noopener,noreferrer');
-        // Optional: also trigger download
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `analysis_share_${Date.now()}.html`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
-    }
-}
     downloadFile(content, filename, mimeType) {
         const blob = new Blob([content], { type: mimeType + ';charset=utf-8' });
         const url = URL.createObjectURL(blob);
