@@ -1,5 +1,10 @@
 class ScoreAnalyzer {
     constructor() {
+        // bind instance methods for event listeners
+        this.openShareWindow = this.openShareWindow.bind(this);
+        this.downloadShareHtml = this.downloadShareHtml.bind(this);
+        this.buildShareHtml = this.buildShareHtml.bind(this);
+    
         this.filesData = new Map(); // 파일명 -> 분석 데이터 매핑
         this.combinedData = null; // 통합된 분석 데이터
         this.selectedFiles = null; // 사용자가 선택/드롭한 파일 목록
@@ -50,14 +55,10 @@ class ScoreAnalyzer {
         const openShareBtn = document.getElementById('openShareBtn');
         const downloadShareBtn = document.getElementById('downloadShareBtn');
         if (openShareBtn) {
-            openShareBtn.addEventListener('click', async () => {
-                await this.openShareWindow();
-            });
+            openShareBtn.addEventListener('click', this.openShareWindow);
         }
         if (downloadShareBtn) {
-            downloadShareBtn.addEventListener('click', async () => {
-                await this.downloadShareHtml();
-            });
+            downloadShareBtn.addEventListener('click', this.downloadShareHtml);
         }
 
             }
