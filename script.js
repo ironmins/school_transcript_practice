@@ -775,7 +775,7 @@ class ScoreAnalyzer {
         </div>`;
         const html = `<!DOCTYPE html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>성적 분석 결과 (공유용)</title>
+<title>(전주고) 1학년 내신 성적 분석 결과</title>
 <link rel="stylesheet" href="${absBase}/style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -786,7 +786,7 @@ class ScoreAnalyzer {
 </head>
 <body>
 <div class="container">
-<header><h1>성적 분석 결과 (공유용)</h1><p>업로드 없이 저장된 분석 결과를 표시합니다</p></header>
+<header><h1>전주고등학교 1학년 내신 성적 분석 결과 (공유용)</h1></header>
 ${uploadStub}
 ${SHARE_RESULTS_TEMPLATE}
 <div id="loading" class="loading" style="display:none;"></div>
@@ -812,7 +812,7 @@ ${SHARE_RESULTS_TEMPLATE}
         </div>`;
         const html = `<!DOCTYPE html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>성적 분석 결과 (공유용)</title>
+<title>(전주고) 1학년 내신 성적 분석 결과</title>
 <link rel="stylesheet" href="${absBase}/style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -823,7 +823,7 @@ ${SHARE_RESULTS_TEMPLATE}
 </head>
 <body>
 <div class="container">
-<header><h1>성적 분석 결과 (공유용)</h1><p>업로드 없이 저장된 분석 결과를 표시합니다</p></header>
+<header><h1>전주고등학교 1학년 내신 성적 분석 결과 (공유용)</h1></header>
 ${uploadStub}
 ${SHARE_RESULTS_TEMPLATE}
 <div id="loading" class="loading" style="display:none;"></div>
