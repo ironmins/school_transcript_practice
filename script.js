@@ -1,34 +1,6 @@
-// script.js
-document.getElementById("analyzeBtn").addEventListener("click", async () => {
-  const fileInput = document.getElementById("fileInput");
-  if (!fileInput.files.length) {
-    alert("파일을 업로드해주세요.");
-    return;
-  }
-  // 분석 로직 예시
-  const analysisArea = document.getElementById("analysisArea");
-  analysisArea.innerHTML = "<h2>과목별 분석</h2><div>분석 결과 예시...</div>";
-  document.getElementById("saveResultBtn").style.display = "inline-block";
-});
-
-document.getElementById("saveResultBtn").addEventListener("click", () => {
-  const analysisHTML = `
-  <!DOCTYPE html>
-  <html lang="ko">
-  <head>
-    <meta charset="UTF-8">
-    <title>성적 분석 결과</title>
-  </head>
-  <body>
-    ${document.getElementById("analysisArea").innerHTML}
-  </body>
-  </html>
-  `;
-  const blob = new Blob([analysisHTML], { type: "text/html" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "analysis_result.html";
-  a.click();
-  URL.revokeObjectURL(url);
-});
+// 간단 예시 - 실제로는 기존 분석 로직 삽입 필요
+function startAnalysis() {
+  const resultContainer = document.getElementById('resultContainer');
+  resultContainer.innerHTML = '<h2>분석 결과</h2><p>여기에 과목별 분석, 테이블, 차트 등이 출력됩니다.</p>';
+  window.analysisHTML = resultContainer.innerHTML; // 공유용 저장 대비
+}

@@ -1,16 +1,18 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>내신 성적 분석기</title>
-  <script src="script.js" defer></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>고등학교 성적 분석기</title>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-  <h1>내신 성적 분석기</h1>
-  <input type="file" id="fileInput" />
-  <button id="analyzeBtn">분석 시작</button>
-  <button id="saveResultBtn" style="display:none;">결과 HTML 저장</button>
-  <div id="analysisArea"></div>
+  <h1>고등학교 1학년 성적 분석기</h1>
+  <input type="file" id="fileInput"/>
+  <button onclick="startAnalysis()">분석 시작</button>
+  <button onclick="downloadResultPage()">결과 저장</button>
+  <div id="resultContainer"></div>
+  <script src="script.js"></script>
+  <script src="download.js"></script>
 </body>
 </html>
