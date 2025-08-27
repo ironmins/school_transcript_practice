@@ -3,7 +3,19 @@ class ScoreAnalyzer {
         this.filesData = new Map(); // 파일명 -> 분석 데이터 매핑
         this.combinedData = null; // 통합된 분석 데이터
         this.selectedFiles = null; // 사용자가 선택/드롭한 파일 목록
-        this.initializeEventListeners();
+        this.
+    // Enable/Disable export & share buttons centrally
+    toggleShareButtons(enable = true) {
+        const exportBtn = document.getElementById('exportBtn');
+        const openShareBtn = document.getElementById('openShareBtn');
+        if (exportBtn) exportBtn.disabled = !enable;
+        if (openShareBtn) openShareBtn.disabled = !enable;
+        // 호환성: .disabled 클래스가 있다면 제거
+        [exportBtn, openShareBtn].forEach(btn => {
+            if (btn && enable && btn.classList.contains('disabled')) btn.classList.remove('disabled');
+        });
+    }
+    initializeEventListeners();
 
         // If the page provides preloaded analysis data, render directly
         if (window.PRELOADED_DATA) {
@@ -14,10 +26,10 @@ class ScoreAnalyzer {
                 const results = document.getElementById('results');
                 if (results) results.style.display = 'block';
                 this.displayResults();
+            this.toggleShareButtons(true);
                 const exportBtn = document.getElementById('exportBtn');
         const openShareBtn = document.getElementById('openShareBtn');
-                if (exportBtn) exportBtn.disabled = false;
-            if (openShareBtn) openShareBtn.disabled = false;
+                this.toggleShareButtons(true);
             } catch (e) {
                 console.error('PRELOADED_DATA 처리 중 오류:', e);
             }
@@ -192,13 +204,13 @@ class ScoreAnalyzer {
             
             this.combineAllData();
             this.displayResults();
+            this.toggleShareButtons(true);
             this.hideLoading();
 
             // Enable export button after successful analysis
             const exportBtn = document.getElementById('exportBtn');
         const openShareBtn = document.getElementById('openShareBtn');
-            if (exportBtn) exportBtn.disabled = false;
-            if (openShareBtn) openShareBtn.disabled = false;
+            this.toggleShareButtons(true);
         } catch (error) {
             this.hideLoading();
             this.showError('파일 분석 중 오류가 발생했습니다: ' + error.message);
@@ -1129,6 +1141,7 @@ class ScoreAnalyzer {
             const results = document.getElementById('results');
             if (results) results.style.display = 'block';
             this.displayResults();
+            this.toggleShareButtons(true);
         }
     }
     
