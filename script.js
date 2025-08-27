@@ -3,19 +3,7 @@ class ScoreAnalyzer {
         this.filesData = new Map(); // 파일명 -> 분석 데이터 매핑
         this.combinedData = null; // 통합된 분석 데이터
         this.selectedFiles = null; // 사용자가 선택/드롭한 파일 목록
-        this.
-    // Enable/Disable export & share buttons centrally
-    toggleShareButtons(enable = true) {
-        const exportBtn = document.getElementById('exportBtn');
-        const openShareBtn = document.getElementById('openShareBtn');
-        if (exportBtn) exportBtn.disabled = !enable;
-        if (openShareBtn) openShareBtn.disabled = !enable;
-        // 호환성: .disabled 클래스가 있다면 제거
-        [exportBtn, openShareBtn].forEach(btn => {
-            if (btn && enable && btn.classList.contains('disabled')) btn.classList.remove('disabled');
-        });
-    }
-    initializeEventListeners();
+        this.initializeEventListeners();
 
         // If the page provides preloaded analysis data, render directly
         if (window.PRELOADED_DATA) {
@@ -26,10 +14,10 @@ class ScoreAnalyzer {
                 const results = document.getElementById('results');
                 if (results) results.style.display = 'block';
                 this.displayResults();
-            this.toggleShareButtons(true);
                 const exportBtn = document.getElementById('exportBtn');
         const openShareBtn = document.getElementById('openShareBtn');
-                this.toggleShareButtons(true);
+                if (exportBtn) exportBtn.disabled = false;
+            if (openShareBtn) openShareBtn.disabled = false;
             } catch (e) {
                 console.error('PRELOADED_DATA 처리 중 오류:', e);
             }
@@ -120,6 +108,7 @@ class ScoreAnalyzer {
         }
 
         
+
         tabBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 this.switchTab(e.target.dataset.tab);
@@ -204,13 +193,14 @@ class ScoreAnalyzer {
             
             this.combineAllData();
             this.displayResults();
-            this.toggleShareButtons(true);
             this.hideLoading();
 
-            // Enable export button after successful analysis
+            // Enable export/share buttons after successful analysis
             const exportBtn = document.getElementById('exportBtn');
+            const openShareBtn = document.getElementById('openShareBtn');
         const openShareBtn = document.getElementById('openShareBtn');
-            this.toggleShareButtons(true);
+            if (exportBtn) exportBtn.disabled = false;
+            if (openShareBtn) openShareBtn.disabled = false;
         } catch (error) {
             this.hideLoading();
             this.showError('파일 분석 중 오류가 발생했습니다: ' + error.message);
@@ -848,7 +838,7 @@ class ScoreAnalyzer {
             alert(`배포용 파일들을 다운로드하고 있습니다.\\n\\n모든 파일을 같은 폴더에 저장한 후\\nindex.html 파일을 열어서 사용하세요.`);
         }
     
-    // Build a single-file HTML (CSS + JS inlined) and open in a new window
+    // Build a single-file HTML and open in a new window
     async buildSingleFileHtml() {
         if (!this.combinedData) {
             this.showError('먼저 파일을 분석하세요.');
@@ -867,7 +857,6 @@ class ScoreAnalyzer {
         let cssContent = await safeFetchText('style.css');
         let jsContent = await safeFetchText('script.js');
         const dataJson = JSON.stringify(this.combinedData);
-
         return `<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -910,7 +899,7 @@ class ScoreAnalyzer {
         const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         window.open(url, '_blank', 'noopener,noreferrer');
-        // Optional: also trigger download for convenience
+        // Optional: also trigger download
         const a = document.createElement('a');
         a.href = url;
         a.download = `analysis_share_${Date.now()}.html`;
@@ -1141,7 +1130,6 @@ class ScoreAnalyzer {
             const results = document.getElementById('results');
             if (results) results.style.display = 'block';
             this.displayResults();
-            this.toggleShareButtons(true);
         }
     }
     
