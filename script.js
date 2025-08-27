@@ -2886,3 +2886,7 @@ document.getElementById("openNewWindowBtn")?.addEventListener("click", () => {
     newWindow.document.write(htmlContent);
     newWindow.document.close();
 });
+
+
+// 전역 인스턴스 등록
+window.analyzer = new ScoreAnalyzer();
