@@ -1,6 +1,100 @@
+const SHARE_RESULTS_TEMPLATE = `
+<div id="results" class="results-section" style="display: none;">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="subjects">과목별 분석</button>
+                <button class="tab-btn" data-tab="grade-analysis">평균등급 분포</button>
+                <button class="tab-btn" data-tab="students">학생별 분석</button>
+            </div>
+
+            <div id="subjects-tab" class="tab-content active">
+                <h2>과목별 분석</h2>
+                <div id="subjectAverages" class="subject-averages"></div>
+            </div>
+
+            <div id="grade-analysis-tab" class="tab-content">
+                <h2>평균등급 분포 분석</h2>
+                <div class="grade-analysis-container">
+                    <div class="chart-section">
+                        <h3>평균등급 분포</h3>
+                        <canvas id="scatterChart" width="400" height="300"></canvas>
+                    </div>
+                    <div class="chart-section">
+                        <h3>등급구간별 학생 수 분포</h3>
+                        <canvas id="barChart" width="400" height="300"></canvas>
+                    </div>
+                    <div class="stats-section">
+                        <div class="stat-item">
+                            <span class="stat-label">전체 평균등급</span>
+                            <span id="overallAverage" class="stat-value">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">표준편차</span>
+                            <span id="standardDeviation" class="stat-value">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">최고등급</span>
+                            <span id="bestGrade" class="stat-value">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">최저등급</span>
+                            <span id="worstGrade" class="stat-value">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="students-tab" class="tab-content">
+                <h2>학생별 분석</h2>
+                <div id="studentAnalysis" class="student-analysis">
+                    <div class="student-selector">
+                        <div class="selector-group">
+                            <label for="gradeSelect">학년:</label>
+                            <select id="gradeSelect" class="selector">
+                                <option value="">전체</option>
+                            </select>
+                        </div>
+                        <div class="selector-group">
+                            <label for="classSelect">반:</label>
+                            <select id="classSelect" class="selector">
+                                <option value="">전체</option>
+                            </select>
+                        </div>
+                        <div class="selector-group">
+                            <label for="studentSelect">번호:</label>
+                            <select id="studentSelect" class="selector">
+                                <option value="">학생 선택</option>
+                            </select>
+                        </div>
+                        <div class="selector-group">
+                            <label for="studentNameSearch">이름:</label>
+                            <input id="studentNameSearch" class="selector" type="text" placeholder="이름으로 검색" />
+                        </div>
+                        <button id="showStudentDetail" class="detail-btn" disabled>상세 분석</button>
+                        <button id="pdfClassBtn" class="detail-btn" title="선택한 학급 전체 PDF 저장">학급 전체 PDF</button>
+                    </div>
+                    
+                    <div class="view-toggle">
+                        <button id="tableViewBtn" class="toggle-btn active">전체 테이블</button>
+                        <button id="detailViewBtn" class="toggle-btn">개인 상세</button>
+                    </div>
+                    
+                    <div id="tableView" class="table-view">
+                        <div class="search-box">
+                            <input type="text" id="studentSearch" placeholder="학생 번호 또는 이름으로 검색...">
+                        </div>
+                        <div id="studentTable" class="student-table"></div>
+                    </div>
+                    
+                    <div id="detailView" class="detail-view" style="display: none;">
+                        <div id="studentDetailContent" class="student-detail-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+`;
+
 class ScoreAnalyzer {
     constructor() {
-
         this.filesData = new Map(); // 파일명 -> 분석 데이터 매핑
         this.combinedData = null; // 통합된 분석 데이터
         this.selectedFiles = null; // 사용자가 선택/드롭한 파일 목록
@@ -39,24 +133,18 @@ class ScoreAnalyzer {
         const pdfClassBtn = document.getElementById('pdfClassBtn');
         const uploadSection = document.querySelector('.upload-section');
         const fileLabel = document.querySelector('.file-input-label');
+        const openShareBtn = document.getElementById('openShareBtn');
+        if (openShareBtn) openShareBtn.addEventListener('click', this.openShareWindow);
+        const downloadShareBtn = document.getElementById('downloadShareBtn');
+        if (downloadShareBtn) downloadShareBtn.addEventListener('click', this.downloadShareHtml);
 
-        fileInput.addEventListener('change', (e) => {
+        if (fileInput) fileInput.addEventListener('change', (e) => {
             const files = Array.from(e.target.files);
             if (files.length > 0) {
                 this.selectedFiles = files;
                 this.displayFileList(files);
-                analyzeBtn.disabled = false;
+                if (analyzeBtn) analyzeBtn.disabled = false;
                 this.hideError();
-
-        const openShareBtn = document.getElementById('openShareBtn');
-        const downloadShareBtn = document.getElementById('downloadShareBtn');
-        if (openShareBtn) {
-            openShareBtn.addEventListener('click', this.openShareWindow);
-        }
-        if (downloadShareBtn) {
-            downloadShareBtn.addEventListener('click', this.downloadShareHtml);
-        }
-
             }
         });
 
@@ -101,13 +189,13 @@ class ScoreAnalyzer {
                 }
                 this.selectedFiles = files;
                 this.displayFileList(files);
-                analyzeBtn.disabled = false;
+                if (analyzeBtn) analyzeBtn.disabled = false;
                 this.hideError();
                 try { if (fileInput) fileInput.files = ev.dataTransfer.files; } catch (_) {}
             });
         }
 
-        analyzeBtn.addEventListener('click', () => {
+        if (analyzeBtn) analyzeBtn.addEventListener('click', () => {
             this.analyzeFiles();
         });
 
@@ -667,8 +755,7 @@ class ScoreAnalyzer {
 
     displayResults() {
         document.getElementById('results').style.display = 'block';
-        const shareControls = document.getElementById('shareControls');
-        if (shareControls) shareControls.style.display = 'flex';
+        const sc=document.getElementById('shareControls'); if(sc) sc.style.display='flex';
         this.displaySubjectAverages();
         this.displayGradeAnalysis();
         this.displayStudentAnalysis();
@@ -676,86 +763,82 @@ class ScoreAnalyzer {
 
     // Export a complete deployment package with all files
     
-    // === 공유용 페이지 생성 메서드(클래스 필드 버전) ===
-    buildShareHtml = async () => {
-        if (!this.combinedData) {
-            this.showError('먼저 파일을 분석하세요.');
-            return '';
-        }
-        const safeFetchText = async (url) => {
-            try {
-                const res = await fetch(url, { cache: 'no-cache' });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                return await res.text();
-            } catch (e) {
-                console.warn('리소스 로드 실패:', url, e);
-                return '';
-            }
-        };
-        let cssContent = '';
-        try { cssContent = await safeFetchText('style.css'); } catch {}
-        let jsContent = '';
-        try { jsContent = await safeFetchText('script.js'); } catch {}
-        const resultsEl = document.getElementById('results');
-        const resultsHTML = resultsEl ? resultsEl.outerHTML : '<div id="results" class="results-section"></div>';
-        const dataJson = JSON.stringify(this.combinedData);
+    // 공유용 새 창/HTML 저장: 원본 스크립트를 절대경로로 로드, PRELOADED_DATA로 재렌더
+    openShareWindow = async () => {
+        if (!this.combinedData) return;
+        const absBase = 'https://ironmins.github.io/school_transcript_practice';
+        const dataJson = JSON.stringify(this.combinedData).replace(/</g,'\u003c');
+        const uploadStub = `
+        <div class="upload-section" style="display:none">
+          <label class="file-input-label"><input id="excelFiles" type="file" accept=".xlsx,.xls" multiple style="display:none"></label>
+          <div class="btn-area"><button id="analyzeBtn" style="display:none"></button><button id="exportBtn" style="display:none"></button></div>
+        </div>`;
         const html = `<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>공유용 성적 분석 뷰어</title>
-  <style>${cssContent}</style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>성적 분석 결과 (공유용)</title>
+<link rel="stylesheet" href="${absBase}/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>성적 분석 결과 (공유용)</h1>
-      <p>업로드 없이 저장된 분석 결과를 표시합니다</p>
-    </header>
-    <div class="upload-section" style="display:none;"></div>
-    ${resultsHTML}
-    <div id="loading" class="loading" style="display:none;"></div>
-    <div id="error" class="error-message" style="display:none;"></div>
-    <footer class="app-footer">
-      <div class="footer-right">
-        <div class="credits">Made by NAMGUNG YEON (Seolak high school)</div>
-        <a class="help-btn" href="https://namgungyeon.tistory.com/133" target="_blank" rel="noopener" title="도움말 보기">❔ 도움말</a>
-      </div>
-    </footer>
-  </div>
-  <script>window.PRELOADED_DATA = ${dataJson};</script>
-  <script>
-${jsContent}
-  </script>
-</body>
-</html>`;
-        return html;
-    };
-
-    openShareWindow = async () => {
-        const html = await this.buildShareHtml();
-        if (!html) return;
-        const blob = new Blob([html], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
+<div class="container">
+<header><h1>성적 분석 결과 (공유용)</h1><p>업로드 없이 저장된 분석 결과를 표시합니다</p></header>
+${uploadStub}
+${SHARE_RESULTS_TEMPLATE}
+<div id="loading" class="loading" style="display:none;"></div>
+<div id="error" class="error-message" style="display:none;"></div>
+<footer class="app-footer"><div class="footer-right"><div class="credits">Made by NAMGUNG YEON (Seolak high school)</div><a class="help-btn" href="https://namgungyeon.tistory.com/133" target="_blank" rel="noopener" title="도움말 보기">❔ 도움말</a></div></footer>
+</div>
+<script>window.PRELOADED_DATA = ${dataJson};</script>
+<script src="${absBase}/script.js"></script>
+</body></html>`;
+        const blob = new Blob([html], {type:'text/html'});
+        const url  = URL.createObjectURL(blob);
         window.open(url, '_blank');
     };
 
     downloadShareHtml = async () => {
-        const html = await this.buildShareHtml();
-        if (!html) return;
+        if (!this.combinedData) return;
+        const absBase = 'https://ironmins.github.io/school_transcript_practice';
+        const dataJson = JSON.stringify(this.combinedData).replace(/</g,'\u003c');
+        const uploadStub = `
+        <div class="upload-section" style="display:none">
+          <label class="file-input-label"><input id="excelFiles" type="file" accept=".xlsx,.xls" multiple style="display:none"></label>
+          <div class="btn-area"><button id="analyzeBtn" style="display:none"></button><button id="exportBtn" style="display:none"></button></div>
+        </div>`;
+        const html = `<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>성적 분석 결과 (공유용)</title>
+<link rel="stylesheet" href="${absBase}/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+<div class="container">
+<header><h1>성적 분석 결과 (공유용)</h1><p>업로드 없이 저장된 분석 결과를 표시합니다</p></header>
+${uploadStub}
+${SHARE_RESULTS_TEMPLATE}
+<div id="loading" class="loading" style="display:none;"></div>
+<div id="error" class="error-message" style="display:none;"></div>
+<footer class="app-footer"><div class="footer-right"><div class="credits">Made by NAMGUNG YEON (Seolak high school)</div><a class="help-btn" href="https://namgungyeon.tistory.com/133" target="_blank" rel="noopener" title="도움말 보기">❔ 도움말</a></div></footer>
+</div>
+<script>window.PRELOADED_DATA = ${dataJson};</script>
+<script src="${absBase}/script.js"></script>
+</body></html>`;
         const ts = new Date();
-        const pad = (n) => String(n).padStart(2, '0');
+        const pad = (n)=>String(n).padStart(2,'0');
         const filename = `analysis_${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}_${pad(ts.getHours())}${pad(ts.getMinutes())}.html`;
         this.downloadFile(html, filename, 'text/html');
     };
-async exportAsHtml(createFolder = true) {
+    async exportAsHtml(createFolder = true) {
         if (!this.combinedData) {
             this.showError('먼저 파일을 분석하세요.');
             return;
@@ -1170,6 +1253,7 @@ class ScoreAnalyzer {
         if (!this.combinedData) return;
         
         document.getElementById('results').style.display = 'block';
+        const sc=document.getElementById('shareControls'); if(sc) sc.style.display='flex';
         this.displaySubjectAverages();
         this.displayGradeAnalysis();
         this.displayStudentAnalysis();
