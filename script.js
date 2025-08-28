@@ -944,7 +944,7 @@ ${SHARE_RESULTS_TEMPLATE}
         <div id="error" class="error-message" style="display:none;"></div>
         <footer class="app-footer">
             <div class="footer-right">
-                <div class="credits">Edited by IRONMIN (Jeonju hugh school) / Made by NAMGUNG YEON (Seolak high school)</div>
+                <div class="credits">Edited by IRONMIN (Jeonju high school) / Made by NAMGUNG YEON (Seolak high school)</div>
                 <a class="help-btn" href="https://namgungyeon.tistory.com/133" target="_blank" rel="noopener" title="도움말 보기">❔ 도움말</a>
             </div>
         </footer>
