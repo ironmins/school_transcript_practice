@@ -791,7 +791,7 @@ ${uploadStub}
 ${SHARE_RESULTS_TEMPLATE}
 <div id="loading" class="loading" style="display:none;"></div>
 <div id="error" class="error-message" style="display:none;"></div>
-<footer class="app-footer"><div class="footer-right"><div class="credits">Made by NAMGUNG YEON (Seolak high school)</div><a class="help-btn" href="https://namgungyeon.tistory.com/133" target="_blank" rel="noopener" title="도움말 보기">❔ 도움말</a></div></footer>
+<footer class="app-footer"><div class="footer-right"><div class="credits">Edited by IRONMIN (Jeonju high school) / Made by NAMGUNG YEON (Seolak high school)</div><a class="help-btn" href="https://namgungyeon.tistory.com/133" target="_blank" rel="noopener" title="도움말 보기">❔ 도움말</a></div></footer>
 </div>
 <script>window.PRELOADED_DATA = ${dataJson};</script>
 <script src="${absBase}/script.js"></script>
@@ -828,7 +828,7 @@ ${uploadStub}
 ${SHARE_RESULTS_TEMPLATE}
 <div id="loading" class="loading" style="display:none;"></div>
 <div id="error" class="error-message" style="display:none;"></div>
-<footer class="app-footer"><div class="footer-right"><div class="credits">Made by NAMGUNG YEON (Seolak high school)</div><a class="help-btn" href="https://namgungyeon.tistory.com/133" target="_blank" rel="noopener" title="도움말 보기">❔ 도움말</a></div></footer>
+<footer class="app-footer"><div class="footer-right"><div class="credits">Edited by IRONMIN (Jeonju high school) / Made by NAMGUNG YEON (Seolak high school)</div><a class="help-btn" href="https://namgungyeon.tistory.com/133" target="_blank" rel="noopener" title="도움말 보기">❔ 도움말</a></div></footer>
 </div>
 <script>window.PRELOADED_DATA = ${dataJson};</script>
 <script src="${absBase}/script.js"></script>
@@ -944,7 +944,7 @@ ${SHARE_RESULTS_TEMPLATE}
         <div id="error" class="error-message" style="display:none;"></div>
         <footer class="app-footer">
             <div class="footer-right">
-                <div class="credits">Made by NAMGUNG YEON (Seolak high school)</div>
+                <div class="credits">Edited by IRONMIN (Jeonju hugh school) / Made by NAMGUNG YEON (Seolak high school)</div>
                 <a class="help-btn" href="https://namgungyeon.tistory.com/133" target="_blank" rel="noopener" title="도움말 보기">❔ 도움말</a>
             </div>
         </footer>
@@ -976,7 +976,7 @@ ${SHARE_RESULTS_TEMPLATE}
                 "- index.html: 메인 페이지 (CSS 내장)\\n" +
                 "- style.css: 별도 스타일 파일 (참고용)\\n" +
                 "- script.js: 분석 스크립트\\n\\n" +
-                "Made by NAMGUNG YEON (Seolak high school)\\n" +
+                "Edited by IRONMIN (Jeonju high school) / Made by NAMGUNG YEON (Seolak high school)\\n" +
                 "링크: https://namgungyeon.tistory.com/133"
             );
             
