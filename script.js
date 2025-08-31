@@ -415,7 +415,7 @@ class ScoreAnalyzer {
                 const percentile = ((worseRankCount + (sameRankCount - 1) / 2) / totalStudents) * 100;
                 
                 // 0~100 범위로 제한하고 반올림
-                const finalPercentile = Math.max(0, Math.min(100, Math.round(percentile)));
+                const finalPercentile = Math.max(0, Math.min(100, Math.floor(percentile)));
                 
                 item.student.percentiles[subject.name] = finalPercentile;
             });
