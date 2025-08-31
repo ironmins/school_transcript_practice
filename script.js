@@ -414,7 +414,7 @@ class ScoreAnalyzer {
                 // 이렇게 하면 1등(rank=1)이 가장 높은 백분위를 갖게 됨
                 const percentile = ((worseRankCount + (sameRankCount - 1) / 2) / totalStudents) * 100;
                 
-                // 0~100 범위로 제한하고 반올림
+                 // 0~100 범위로 제한하고 내림 처리하여 경계 상향 편향 방지
                 const finalPercentile = Math.max(0, Math.min(100, Math.floor(percentile)));
                 
                 item.student.percentiles[subject.name] = finalPercentile;
@@ -644,19 +644,31 @@ class ScoreAnalyzer {
                     student.achievements[subject.name] = achievementRow[colIndex];
                 }
                 
-                // 석차등급
-                if (gradeRow && gradeRow[colIndex] && !isNaN(gradeRow[colIndex])) {
-                    student.grades[subject.name] = parseInt(gradeRow[colIndex]);
+                // 석차등급 (문자 혼입 시 숫자만 추출)
+                if (gradeRow && gradeRow[colIndex] !== undefined && gradeRow[colIndex] !== null) {
+                    const gradeText = String(gradeRow[colIndex]).trim();
+                    const gm = gradeText.match(/\d+/);
+                    if (gm) {
+                        student.grades[subject.name] = parseInt(gm[0], 10);
+                    }
                 }
                 
-                // 석차
-                if (rankRow && rankRow[colIndex] && !isNaN(rankRow[colIndex])) {
-                    student.ranks[subject.name] = parseInt(rankRow[colIndex]);
+                // 석차 (동석차 표기 포함 대비: 숫자만 추출)
+                if (rankRow && rankRow[colIndex] !== undefined && rankRow[colIndex] !== null) {
+                    const rankText = String(rankRow[colIndex]).trim();
+                    const rm = rankText.match(/\d+/);
+                    if (rm) {
+                        student.ranks[subject.name] = parseInt(rm[0], 10);
+                    }
                 }
                 
-                // 수강자수 (첫 번째 과목에서만 가져오기)
-                if (!student.totalStudents && totalRow && totalRow[colIndex] && !isNaN(totalRow[colIndex])) {
-                    student.totalStudents = parseInt(totalRow[colIndex]);
+                // 수강자수 (첫 번째 과목에서만 가져오기, 숫자만 추출)
+                if (!student.totalStudents && totalRow && totalRow[colIndex] !== undefined && totalRow[colIndex] !== null) {
+                    const totalText = String(totalRow[colIndex]).trim();
+                    const tm = totalText.match(/\d+/);
+                    if (tm) {
+                        student.totalStudents = parseInt(tm[0], 10);
+                    }
                 }
             });
 
@@ -726,6 +738,8 @@ class ScoreAnalyzer {
         return 9;                        // 하위 4%
     }
 
+    // (제거됨) 5등급 기반 9등급 하한 강제 로직은 오류 탐지 가시성을 해치므로 사용하지 않음
+            
     // 9등급 가중평균 계산
     calculateWeightedAverage9Grade(student, subjects) {
         let totalGradePoints = 0;
@@ -2670,16 +2684,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const achievement = student.achievements[subject.name] || 'N/A';
             const grade = student.grades ? student.grades[subject.name] : undefined;
             const rank = student.ranks ? student.ranks[subject.name] || 'N/A' : 'N/A';
-            const percentile = student.percentiles ? student.percentiles[subject.name] || 0 : 0;
+            // 퍼센타일 기본값을 0으로 두지 않고, 없으면 null 처리
+            const percentile = student.percentiles && Object.prototype.hasOwnProperty.call(student.percentiles, subject.name)
+                ? student.percentiles[subject.name]
+                : null;
             
             // 등급이 있는지 확인
             const hasGrade = grade !== undefined && grade !== null && grade !== 'N/A' && !isNaN(grade);
             
             // 백분위에 따른 색상 결정 (등급이 있는 경우만)
             let percentileClass = 'low';
-            if (hasGrade && percentile >= 80) percentileClass = 'excellent';
-            else if (hasGrade && percentile >= 60) percentileClass = 'good';
-            else if (hasGrade && percentile >= 40) percentileClass = 'average';
+            if (hasGrade && percentile !== null && percentile >= 80) percentileClass = 'excellent';
+            else if (hasGrade && percentile !== null && percentile >= 60) percentileClass = 'good';
+            else if (hasGrade && percentile !== null && percentile >= 40) percentileClass = 'average';
             
             if (hasGrade) {
                 // 등급이 있는 과목: 모든 정보 표시
@@ -2711,15 +2728,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                             <div class="metric">
                                 <span class="metric-label">백분위</span>
-                                <span class="metric-value percentile ${percentileClass}">${percentile}%</span>
+                                <span class="metric-value percentile ${percentileClass}">${percentile !== null ? percentile + '%' : 'N/A'}</span>
                             </div>
                             <div class="metric">
                                 <span class="metric-label">등급(9등급환산)</span>
-                                <span class="metric-value orange">${this.convertPercentileTo9Grade(percentile) || 'N/A'}등급</span>
+                                <span class="metric-value orange">${percentile !== null ? (this.convertPercentileTo9Grade(percentile) || 'N/A') + '등급' : 'N/A'}</span>
                             </div>
                         </div>
                         <div class="percentile-bar">
-                            <div class="percentile-fill ${percentileClass}" style="width: ${percentile}%"></div>
+                            <div class="percentile-fill ${percentileClass}" style="width: ${percentile !== null ? percentile : 0}%"></div>
                         </div>
                     </div>
                 `;
