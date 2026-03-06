@@ -325,6 +325,12 @@ class ScoreAnalyzer {
             studentSearch.addEventListener('input', () => {
                 this.filterStudentTable();
             });
+            studentSearch.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.searchAndShowStudentDetail(studentSearch.value.trim());
+                }
+            });
         }
 
         gradeSelect.addEventListener('change', () => {
@@ -342,8 +348,30 @@ class ScoreAnalyzer {
             showStudentDetail.disabled = !studentSelect.value;
         });
         if (studentNameSearch) {
+            // 기존: 입력할 때마다 학생 목록 필터링
             studentNameSearch.addEventListener('input', () => {
                 this.updateStudentOptions();
+            });
+
+            // 추가: Enter 키로 상세 분석 화면 전환
+            studentNameSearch.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const studentSelectEl = document.getElementById('studentSelect');
+                    if (!studentSelectEl) return;
+
+                    // 옵션이 placeholder 1개 + 학생 1개 = 총 2개일 때 자동 선택
+                    if (studentSelectEl.options.length === 2) {
+                        studentSelectEl.value = studentSelectEl.options[1].value;
+                        const showBtn = document.getElementById('showStudentDetail');
+                        if (showBtn) showBtn.disabled = false;
+                    }
+
+                    // 선택된 학생이 있으면 상세 분석 표시
+                    if (studentSelectEl.value) {
+                        this.showStudentDetail();
+                    }
+                }
             });
         }
 
@@ -1428,32 +1456,406 @@ class ScoreAnalyzer {
 
     getBusanGradeAverageToNineGradeTable() {
         return [
-            { grade5: 1.08, grade9: 1.59 },
-            { grade5: 1.16, grade9: 1.78 },
+            { grade5: 1.00, grade9: 1.62 },
+            { grade5: 1.01, grade9: 1.63 },
+            { grade5: 1.02, grade9: 1.65 },
+            { grade5: 1.03, grade9: 1.66 },
+            { grade5: 1.04, grade9: 1.68 },
+            { grade5: 1.05, grade9: 1.69 },
+            { grade5: 1.06, grade9: 1.71 },
+            { grade5: 1.07, grade9: 1.72 },
+            { grade5: 1.08, grade9: 1.74 },
+            { grade5: 1.09, grade9: 1.75 },
+            { grade5: 1.10, grade9: 1.77 },
+            { grade5: 1.11, grade9: 1.78 },
+            { grade5: 1.12, grade9: 1.80 },
+            { grade5: 1.13, grade9: 1.81 },
+            { grade5: 1.14, grade9: 1.83 },
+            { grade5: 1.15, grade9: 1.84 },
+            { grade5: 1.16, grade9: 1.86 },
+            { grade5: 1.17, grade9: 1.87 },
+            { grade5: 1.18, grade9: 1.89 },
+            { grade5: 1.19, grade9: 1.90 },
+            { grade5: 1.20, grade9: 1.92 },
+            { grade5: 1.21, grade9: 1.93 },
+            { grade5: 1.22, grade9: 1.95 },
+            { grade5: 1.23, grade9: 1.96 },
             { grade5: 1.24, grade9: 1.98 },
-            { grade5: 1.33, grade9: 2.14 },
-            { grade5: 1.42, grade9: 2.32 },
-            { grade5: 1.50, grade9: 2.45 },
-            { grade5: 1.66, grade9: 2.72 },
-            { grade5: 1.83, grade9: 3.03 },
-            { grade5: 2.00, grade9: 3.35 },
-            { grade5: 2.16, grade9: 3.60 },
-            { grade5: 2.33, grade9: 3.91 },
-            { grade5: 2.50, grade9: 4.20 },
-            { grade5: 2.66, grade9: 4.46 },
-            { grade5: 2.83, grade9: 4.73 },
-            { grade5: 3.00, grade9: 5.03 },
-            { grade5: 3.16, grade9: 5.28 },
-            { grade5: 3.33, grade9: 5.58 },
-            { grade5: 3.50, grade9: 5.86 },
-            { grade5: 3.66, grade9: 6.08 },
-            { grade5: 3.83, grade9: 6.37 },
-            { grade5: 4.00, grade9: 6.67 },
-            { grade5: 4.16, grade9: 6.93 },
-            { grade5: 4.33, grade9: 7.20 },
-            { grade5: 4.50, grade9: 7.48 },
-            { grade5: 4.66, grade9: 7.71 },
-            { grade5: 4.83, grade9: 8.00 },
+            { grade5: 1.25, grade9: 1.99 },
+            { grade5: 1.26, grade9: 2.01 },
+            { grade5: 1.27, grade9: 2.02 },
+            { grade5: 1.28, grade9: 2.04 },
+            { grade5: 1.29, grade9: 2.05 },
+            { grade5: 1.30, grade9: 2.07 },
+            { grade5: 1.31, grade9: 2.08 },
+            { grade5: 1.32, grade9: 2.10 },
+            { grade5: 1.33, grade9: 2.11 },
+            { grade5: 1.34, grade9: 2.13 },
+            { grade5: 1.35, grade9: 2.14 },
+            { grade5: 1.36, grade9: 2.16 },
+            { grade5: 1.37, grade9: 2.17 },
+            { grade5: 1.38, grade9: 2.19 },
+            { grade5: 1.39, grade9: 2.20 },
+            { grade5: 1.40, grade9: 2.22 },
+            { grade5: 1.41, grade9: 2.23 },
+            { grade5: 1.42, grade9: 2.25 },
+            { grade5: 1.43, grade9: 2.26 },
+            { grade5: 1.44, grade9: 2.28 },
+            { grade5: 1.45, grade9: 2.29 },
+            { grade5: 1.46, grade9: 2.31 },
+            { grade5: 1.47, grade9: 2.32 },
+            { grade5: 1.48, grade9: 2.34 },
+            { grade5: 1.49, grade9: 2.35 },
+            { grade5: 1.50, grade9: 2.37 },
+            { grade5: 1.51, grade9: 2.38 },
+            { grade5: 1.52, grade9: 2.40 },
+            { grade5: 1.53, grade9: 2.42 },
+            { grade5: 1.54, grade9: 2.44 },
+            { grade5: 1.55, grade9: 2.46 },
+            { grade5: 1.56, grade9: 2.47 },
+            { grade5: 1.57, grade9: 2.49 },
+            { grade5: 1.58, grade9: 2.51 },
+            { grade5: 1.59, grade9: 2.53 },
+            { grade5: 1.60, grade9: 2.55 },
+            { grade5: 1.61, grade9: 2.57 },
+            { grade5: 1.62, grade9: 2.59 },
+            { grade5: 1.63, grade9: 2.61 },
+            { grade5: 1.64, grade9: 2.63 },
+            { grade5: 1.65, grade9: 2.65 },
+            { grade5: 1.66, grade9: 2.66 },
+            { grade5: 1.67, grade9: 2.68 },
+            { grade5: 1.68, grade9: 2.70 },
+            { grade5: 1.69, grade9: 2.72 },
+            { grade5: 1.70, grade9: 2.74 },
+            { grade5: 1.71, grade9: 2.76 },
+            { grade5: 1.72, grade9: 2.78 },
+            { grade5: 1.73, grade9: 2.80 },
+            { grade5: 1.74, grade9: 2.82 },
+            { grade5: 1.75, grade9: 2.84 },
+            { grade5: 1.76, grade9: 2.85 },
+            { grade5: 1.77, grade9: 2.87 },
+            { grade5: 1.78, grade9: 2.89 },
+            { grade5: 1.79, grade9: 2.91 },
+            { grade5: 1.80, grade9: 2.93 },
+            { grade5: 1.81, grade9: 2.95 },
+            { grade5: 1.82, grade9: 2.97 },
+            { grade5: 1.83, grade9: 2.99 },
+            { grade5: 1.84, grade9: 3.01 },
+            { grade5: 1.85, grade9: 3.03 },
+            { grade5: 1.86, grade9: 3.04 },
+            { grade5: 1.87, grade9: 3.06 },
+            { grade5: 1.88, grade9: 3.08 },
+            { grade5: 1.89, grade9: 3.10 },
+            { grade5: 1.90, grade9: 3.12 },
+            { grade5: 1.91, grade9: 3.14 },
+            { grade5: 1.92, grade9: 3.16 },
+            { grade5: 1.93, grade9: 3.18 },
+            { grade5: 1.94, grade9: 3.20 },
+            { grade5: 1.95, grade9: 3.22 },
+            { grade5: 1.96, grade9: 3.23 },
+            { grade5: 1.97, grade9: 3.25 },
+            { grade5: 1.98, grade9: 3.27 },
+            { grade5: 1.99, grade9: 3.29 },
+            { grade5: 2.00, grade9: 3.31 },
+            { grade5: 2.01, grade9: 3.32 },
+            { grade5: 2.02, grade9: 3.34 },
+            { grade5: 2.03, grade9: 3.35 },
+            { grade5: 2.04, grade9: 3.37 },
+            { grade5: 2.05, grade9: 3.38 },
+            { grade5: 2.06, grade9: 3.40 },
+            { grade5: 2.07, grade9: 3.41 },
+            { grade5: 2.08, grade9: 3.43 },
+            { grade5: 2.09, grade9: 3.44 },
+            { grade5: 2.10, grade9: 3.46 },
+            { grade5: 2.11, grade9: 3.47 },
+            { grade5: 2.12, grade9: 3.49 },
+            { grade5: 2.13, grade9: 3.50 },
+            { grade5: 2.14, grade9: 3.52 },
+            { grade5: 2.15, grade9: 3.53 },
+            { grade5: 2.16, grade9: 3.55 },
+            { grade5: 2.17, grade9: 3.56 },
+            { grade5: 2.18, grade9: 3.58 },
+            { grade5: 2.19, grade9: 3.59 },
+            { grade5: 2.20, grade9: 3.61 },
+            { grade5: 2.21, grade9: 3.62 },
+            { grade5: 2.22, grade9: 3.64 },
+            { grade5: 2.23, grade9: 3.65 },
+            { grade5: 2.24, grade9: 3.67 },
+            { grade5: 2.25, grade9: 3.68 },
+            { grade5: 2.26, grade9: 3.70 },
+            { grade5: 2.27, grade9: 3.71 },
+            { grade5: 2.28, grade9: 3.73 },
+            { grade5: 2.29, grade9: 3.74 },
+            { grade5: 2.30, grade9: 3.76 },
+            { grade5: 2.31, grade9: 3.77 },
+            { grade5: 2.32, grade9: 3.79 },
+            { grade5: 2.33, grade9: 3.80 },
+            { grade5: 2.34, grade9: 3.82 },
+            { grade5: 2.35, grade9: 3.83 },
+            { grade5: 2.36, grade9: 3.85 },
+            { grade5: 2.37, grade9: 3.86 },
+            { grade5: 2.38, grade9: 3.88 },
+            { grade5: 2.39, grade9: 3.89 },
+            { grade5: 2.40, grade9: 3.91 },
+            { grade5: 2.41, grade9: 3.92 },
+            { grade5: 2.42, grade9: 3.94 },
+            { grade5: 2.43, grade9: 3.95 },
+            { grade5: 2.44, grade9: 3.97 },
+            { grade5: 2.45, grade9: 3.98 },
+            { grade5: 2.46, grade9: 4.00 },
+            { grade5: 2.47, grade9: 4.01 },
+            { grade5: 2.48, grade9: 4.03 },
+            { grade5: 2.49, grade9: 4.04 },
+            { grade5: 2.50, grade9: 4.06 },
+            { grade5: 2.51, grade9: 4.07 },
+            { grade5: 2.52, grade9: 4.09 },
+            { grade5: 2.53, grade9: 4.10 },
+            { grade5: 2.54, grade9: 4.12 },
+            { grade5: 2.55, grade9: 4.14 },
+            { grade5: 2.56, grade9: 4.15 },
+            { grade5: 2.57, grade9: 4.17 },
+            { grade5: 2.58, grade9: 4.19 },
+            { grade5: 2.59, grade9: 4.20 },
+            { grade5: 2.60, grade9: 4.22 },
+            { grade5: 2.61, grade9: 4.24 },
+            { grade5: 2.62, grade9: 4.25 },
+            { grade5: 2.63, grade9: 4.27 },
+            { grade5: 2.64, grade9: 4.28 },
+            { grade5: 2.65, grade9: 4.30 },
+            { grade5: 2.66, grade9: 4.32 },
+            { grade5: 2.67, grade9: 4.33 },
+            { grade5: 2.68, grade9: 4.35 },
+            { grade5: 2.69, grade9: 4.37 },
+            { grade5: 2.70, grade9: 4.38 },
+            { grade5: 2.71, grade9: 4.40 },
+            { grade5: 2.72, grade9: 4.42 },
+            { grade5: 2.73, grade9: 4.43 },
+            { grade5: 2.74, grade9: 4.45 },
+            { grade5: 2.75, grade9: 4.47 },
+            { grade5: 2.76, grade9: 4.48 },
+            { grade5: 2.77, grade9: 4.50 },
+            { grade5: 2.78, grade9: 4.52 },
+            { grade5: 2.79, grade9: 4.53 },
+            { grade5: 2.80, grade9: 4.55 },
+            { grade5: 2.81, grade9: 4.57 },
+            { grade5: 2.82, grade9: 4.58 },
+            { grade5: 2.83, grade9: 4.60 },
+            { grade5: 2.84, grade9: 4.62 },
+            { grade5: 2.85, grade9: 4.63 },
+            { grade5: 2.86, grade9: 4.65 },
+            { grade5: 2.87, grade9: 4.67 },
+            { grade5: 2.88, grade9: 4.68 },
+            { grade5: 2.89, grade9: 4.70 },
+            { grade5: 2.90, grade9: 4.71 },
+            { grade5: 2.91, grade9: 4.73 },
+            { grade5: 2.92, grade9: 4.75 },
+            { grade5: 2.93, grade9: 4.76 },
+            { grade5: 2.94, grade9: 4.78 },
+            { grade5: 2.95, grade9: 4.80 },
+            { grade5: 2.96, grade9: 4.81 },
+            { grade5: 2.97, grade9: 4.83 },
+            { grade5: 2.98, grade9: 4.85 },
+            { grade5: 2.99, grade9: 4.86 },
+            { grade5: 3.00, grade9: 4.88 },
+            { grade5: 3.01, grade9: 4.89 },
+            { grade5: 3.02, grade9: 4.90 },
+            { grade5: 3.03, grade9: 4.92 },
+            { grade5: 3.04, grade9: 4.93 },
+            { grade5: 3.05, grade9: 4.94 },
+            { grade5: 3.06, grade9: 4.96 },
+            { grade5: 3.07, grade9: 4.97 },
+            { grade5: 3.08, grade9: 4.98 },
+            { grade5: 3.09, grade9: 5.00 },
+            { grade5: 3.10, grade9: 5.01 },
+            { grade5: 3.11, grade9: 5.02 },
+            { grade5: 3.12, grade9: 5.04 },
+            { grade5: 3.13, grade9: 5.05 },
+            { grade5: 3.14, grade9: 5.06 },
+            { grade5: 3.15, grade9: 5.08 },
+            { grade5: 3.16, grade9: 5.09 },
+            { grade5: 3.17, grade9: 5.10 },
+            { grade5: 3.18, grade9: 5.12 },
+            { grade5: 3.19, grade9: 5.13 },
+            { grade5: 3.20, grade9: 5.14 },
+            { grade5: 3.21, grade9: 5.16 },
+            { grade5: 3.22, grade9: 5.17 },
+            { grade5: 3.23, grade9: 5.18 },
+            { grade5: 3.24, grade9: 5.20 },
+            { grade5: 3.25, grade9: 5.21 },
+            { grade5: 3.26, grade9: 5.22 },
+            { grade5: 3.27, grade9: 5.23 },
+            { grade5: 3.28, grade9: 5.25 },
+            { grade5: 3.29, grade9: 5.26 },
+            { grade5: 3.30, grade9: 5.27 },
+            { grade5: 3.31, grade9: 5.29 },
+            { grade5: 3.32, grade9: 5.30 },
+            { grade5: 3.33, grade9: 5.31 },
+            { grade5: 3.34, grade9: 5.33 },
+            { grade5: 3.35, grade9: 5.34 },
+            { grade5: 3.36, grade9: 5.35 },
+            { grade5: 3.37, grade9: 5.37 },
+            { grade5: 3.38, grade9: 5.38 },
+            { grade5: 3.39, grade9: 5.39 },
+            { grade5: 3.40, grade9: 5.41 },
+            { grade5: 3.41, grade9: 5.42 },
+            { grade5: 3.42, grade9: 5.43 },
+            { grade5: 3.43, grade9: 5.45 },
+            { grade5: 3.44, grade9: 5.46 },
+            { grade5: 3.45, grade9: 5.47 },
+            { grade5: 3.46, grade9: 5.49 },
+            { grade5: 3.47, grade9: 5.50 },
+            { grade5: 3.48, grade9: 5.51 },
+            { grade5: 3.49, grade9: 5.53 },
+            { grade5: 3.50, grade9: 5.54 },
+            { grade5: 3.51, grade9: 5.55 },
+            { grade5: 3.52, grade9: 5.57 },
+            { grade5: 3.53, grade9: 5.58 },
+            { grade5: 3.54, grade9: 5.60 },
+            { grade5: 3.55, grade9: 5.62 },
+            { grade5: 3.56, grade9: 5.64 },
+            { grade5: 3.57, grade9: 5.65 },
+            { grade5: 3.58, grade9: 5.67 },
+            { grade5: 3.59, grade9: 5.69 },
+            { grade5: 3.60, grade9: 5.71 },
+            { grade5: 3.61, grade9: 5.72 },
+            { grade5: 3.62, grade9: 5.74 },
+            { grade5: 3.63, grade9: 5.76 },
+            { grade5: 3.64, grade9: 5.78 },
+            { grade5: 3.65, grade9: 5.79 },
+            { grade5: 3.66, grade9: 5.81 },
+            { grade5: 3.67, grade9: 5.83 },
+            { grade5: 3.68, grade9: 5.84 },
+            { grade5: 3.69, grade9: 5.86 },
+            { grade5: 3.70, grade9: 5.88 },
+            { grade5: 3.71, grade9: 5.90 },
+            { grade5: 3.72, grade9: 5.91 },
+            { grade5: 3.73, grade9: 5.93 },
+            { grade5: 3.74, grade9: 5.95 },
+            { grade5: 3.75, grade9: 5.97 },
+            { grade5: 3.76, grade9: 5.98 },
+            { grade5: 3.77, grade9: 6.00 },
+            { grade5: 3.78, grade9: 6.02 },
+            { grade5: 3.79, grade9: 6.04 },
+            { grade5: 3.80, grade9: 6.05 },
+            { grade5: 3.81, grade9: 6.07 },
+            { grade5: 3.82, grade9: 6.09 },
+            { grade5: 3.83, grade9: 6.11 },
+            { grade5: 3.84, grade9: 6.12 },
+            { grade5: 3.85, grade9: 6.14 },
+            { grade5: 3.86, grade9: 6.16 },
+            { grade5: 3.87, grade9: 6.17 },
+            { grade5: 3.88, grade9: 6.19 },
+            { grade5: 3.89, grade9: 6.21 },
+            { grade5: 3.90, grade9: 6.23 },
+            { grade5: 3.91, grade9: 6.24 },
+            { grade5: 3.92, grade9: 6.26 },
+            { grade5: 3.93, grade9: 6.28 },
+            { grade5: 3.94, grade9: 6.30 },
+            { grade5: 3.95, grade9: 6.31 },
+            { grade5: 3.96, grade9: 6.33 },
+            { grade5: 3.97, grade9: 6.35 },
+            { grade5: 3.98, grade9: 6.37 },
+            { grade5: 3.99, grade9: 6.38 },
+            { grade5: 4.00, grade9: 6.40 },
+            { grade5: 4.01, grade9: 6.41 },
+            { grade5: 4.02, grade9: 6.42 },
+            { grade5: 4.03, grade9: 6.44 },
+            { grade5: 4.04, grade9: 6.45 },
+            { grade5: 4.05, grade9: 6.47 },
+            { grade5: 4.06, grade9: 6.48 },
+            { grade5: 4.07, grade9: 6.50 },
+            { grade5: 4.08, grade9: 6.51 },
+            { grade5: 4.09, grade9: 6.52 },
+            { grade5: 4.10, grade9: 6.54 },
+            { grade5: 4.11, grade9: 6.55 },
+            { grade5: 4.12, grade9: 6.57 },
+            { grade5: 4.13, grade9: 6.58 },
+            { grade5: 4.14, grade9: 6.60 },
+            { grade5: 4.15, grade9: 6.61 },
+            { grade5: 4.16, grade9: 6.62 },
+            { grade5: 4.17, grade9: 6.64 },
+            { grade5: 4.18, grade9: 6.65 },
+            { grade5: 4.19, grade9: 6.67 },
+            { grade5: 4.20, grade9: 6.68 },
+            { grade5: 4.21, grade9: 6.70 },
+            { grade5: 4.22, grade9: 6.71 },
+            { grade5: 4.23, grade9: 6.72 },
+            { grade5: 4.24, grade9: 6.74 },
+            { grade5: 4.25, grade9: 6.75 },
+            { grade5: 4.26, grade9: 6.77 },
+            { grade5: 4.27, grade9: 6.78 },
+            { grade5: 4.28, grade9: 6.80 },
+            { grade5: 4.29, grade9: 6.81 },
+            { grade5: 4.30, grade9: 6.82 },
+            { grade5: 4.31, grade9: 6.84 },
+            { grade5: 4.32, grade9: 6.85 },
+            { grade5: 4.33, grade9: 6.87 },
+            { grade5: 4.34, grade9: 6.88 },
+            { grade5: 4.35, grade9: 6.90 },
+            { grade5: 4.36, grade9: 6.91 },
+            { grade5: 4.37, grade9: 6.92 },
+            { grade5: 4.38, grade9: 6.94 },
+            { grade5: 4.39, grade9: 6.95 },
+            { grade5: 4.40, grade9: 6.97 },
+            { grade5: 4.41, grade9: 6.98 },
+            { grade5: 4.42, grade9: 7.00 },
+            { grade5: 4.43, grade9: 7.01 },
+            { grade5: 4.44, grade9: 7.02 },
+            { grade5: 4.45, grade9: 7.04 },
+            { grade5: 4.46, grade9: 7.05 },
+            { grade5: 4.47, grade9: 7.07 },
+            { grade5: 4.48, grade9: 7.08 },
+            { grade5: 4.49, grade9: 7.10 },
+            { grade5: 4.50, grade9: 7.11 },
+            { grade5: 4.51, grade9: 7.12 },
+            { grade5: 4.52, grade9: 7.16 },
+            { grade5: 4.53, grade9: 7.20 },
+            { grade5: 4.54, grade9: 7.24 },
+            { grade5: 4.55, grade9: 7.27 },
+            { grade5: 4.56, grade9: 7.31 },
+            { grade5: 4.57, grade9: 7.35 },
+            { grade5: 4.58, grade9: 7.39 },
+            { grade5: 4.59, grade9: 7.43 },
+            { grade5: 4.60, grade9: 7.47 },
+            { grade5: 4.61, grade9: 7.50 },
+            { grade5: 4.62, grade9: 7.54 },
+            { grade5: 4.63, grade9: 7.58 },
+            { grade5: 4.64, grade9: 7.62 },
+            { grade5: 4.65, grade9: 7.66 },
+            { grade5: 4.66, grade9: 7.70 },
+            { grade5: 4.67, grade9: 7.73 },
+            { grade5: 4.68, grade9: 7.77 },
+            { grade5: 4.69, grade9: 7.81 },
+            { grade5: 4.70, grade9: 7.85 },
+            { grade5: 4.71, grade9: 7.89 },
+            { grade5: 4.72, grade9: 7.93 },
+            { grade5: 4.73, grade9: 7.96 },
+            { grade5: 4.74, grade9: 8.00 },
+            { grade5: 4.75, grade9: 8.04 },
+            { grade5: 4.76, grade9: 8.08 },
+            { grade5: 4.77, grade9: 8.12 },
+            { grade5: 4.78, grade9: 8.16 },
+            { grade5: 4.79, grade9: 8.19 },
+            { grade5: 4.80, grade9: 8.23 },
+            { grade5: 4.81, grade9: 8.27 },
+            { grade5: 4.82, grade9: 8.31 },
+            { grade5: 4.83, grade9: 8.35 },
+            { grade5: 4.84, grade9: 8.39 },
+            { grade5: 4.85, grade9: 8.42 },
+            { grade5: 4.86, grade9: 8.46 },
+            { grade5: 4.87, grade9: 8.50 },
+            { grade5: 4.88, grade9: 8.54 },
+            { grade5: 4.89, grade9: 8.58 },
+            { grade5: 4.90, grade9: 8.62 },
+            { grade5: 4.91, grade9: 8.65 },
+            { grade5: 4.92, grade9: 8.69 },
+            { grade5: 4.93, grade9: 8.73 },
+            { grade5: 4.94, grade9: 8.77 },
+            { grade5: 4.95, grade9: 8.81 },
+            { grade5: 4.96, grade9: 8.85 },
+            { grade5: 4.97, grade9: 8.88 },
+            { grade5: 4.98, grade9: 8.92 },
+            { grade5: 4.99, grade9: 8.96 },
             { grade5: 5.00, grade9: 9.00 }
         ];
     }
@@ -5478,6 +5880,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    searchAndShowStudentDetail(searchTerm) {
+        if (!this.combinedData || !searchTerm) return;
+
+        const gradeSelect = document.getElementById('gradeSelect');
+        const classSelect = document.getElementById('classSelect');
+        const selectedGrade = gradeSelect ? gradeSelect.value : '';
+        const selectedClass = classSelect ? classSelect.value : '';
+        const query = searchTerm.toLowerCase();
+
+        // 학년/반 필터 적용 후 이름/번호로 검색
+        let filtered = this.combinedData.students;
+
+        if (selectedGrade) {
+            filtered = filtered.filter(s => String(s.grade) === String(selectedGrade));
+        }
+        if (selectedClass) {
+            filtered = filtered.filter(s => String(s.class) === String(selectedClass));
+        }
+
+        filtered = filtered.filter(s =>
+            (s.name && s.name.toLowerCase().includes(query)) ||
+            (s.originalNumber && String(s.originalNumber).includes(query)) ||
+            String(s.number).includes(query)
+        );
+
+        if (filtered.length === 1) {
+            // 검색 결과가 1명이면 바로 상세 분석 표시
+            const student = filtered[0];
+            const studentSelect = document.getElementById('studentSelect');
+            if (studentSelect) {
+                studentSelect.value = student.number;
+            }
+            this.renderStudentDetail(student);
+            this.switchView('detail');
+        } else if (filtered.length > 1) {
+            // 여러 명이면 테이블만 필터링 (이미 input 이벤트로 처리됨)
+            this.filterStudentTable();
+        }
+    }
+
     switchTab(tabName) {
         // 탭 버튼 활성화
         document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -5570,7 +6012,7 @@ document.addEventListener('DOMContentLoaded', () => {
             : '';
         const usesBusanReference = this.usesBusanNineGradeReference(student, this.combinedData.subjects);
         const nineGradeReferenceNote = usesBusanReference
-            ? '<span class="summary-note">부산교육청 환산 기준</span>'
+            ? '<span class="summary-note">전북교육청 환산 기준</span>'
             : '';
         
         const html = `
@@ -5700,7 +6142,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalGradedStudents = student.totalGradedStudents;
         const usesBusanReference = this.usesBusanNineGradeReference(student, this.combinedData.subjects);
         const nineGradeReferenceNote = usesBusanReference
-            ? '<span class="summary-note">부산교육청 환산 기준</span>'
+            ? '<span class="summary-note">전북교육청 환산 기준</span>'
             : '';
         return `
             <div class="student-print-page">
@@ -9821,6 +10263,21 @@ class StandaloneScoreAnalyzer {
         if (studentNameSearch) {
             studentNameSearch.addEventListener('input', () => {
                 this.updateStudentOptions();
+            });
+            studentNameSearch.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    // 학생 선택 드롭다운에 1명만 있으면 바로 상세 표시
+                    const studentSelect = document.getElementById('studentSelect');
+                    if (studentSelect && studentSelect.options.length === 2) {
+                        // options[0]은 "학생 선택" placeholder, options[1]이 유일한 학생
+                        studentSelect.value = studentSelect.options[1].value;
+                        this.showStudentDetail();
+                    } else if (studentSelect && studentSelect.value) {
+                        // 이미 선택된 학생이 있으면 바로 표시
+                        this.showStudentDetail();
+                    }
+                }
             });
         }
 
